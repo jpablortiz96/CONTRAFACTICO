@@ -1,29 +1,33 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import {
-  EmptyToolInputSchema,
-  PlaceholderToolOutputSchema,
-  type PlaceholderToolOutput,
+  SimulateCounterfactualInputSchema,
+  SimulateCounterfactualOutputSchema,
 } from "../schemas/index.js";
+import { simulateCounterfactual } from "../services/decisionAnalysis.js";
 
 export function registerSimulateCounterfactualTool(server: McpServer): void {
   server.registerTool(
     "simulate_counterfactual",
     {
       title: "Simulate Counterfactual",
-      description: "Simulate the organizational branch that did not happen.",
-      inputSchema: EmptyToolInputSchema,
-      outputSchema: PlaceholderToolOutputSchema,
+      description:
+        "Build cited real and counterfactual branches from a verified fork event.",
+      inputSchema: SimulateCounterfactualInputSchema,
+      outputSchema: SimulateCounterfactualOutputSchema,
     },
-    async () => {
-      const structuredContent: PlaceholderToolOutput = {
-        status: "not_implemented",
-        tool: "simulate_counterfactual",
-        message: "Counterfactual simulation is not implemented in Step 0.",
-      };
+    async ({ decision_id, fork_source_id }) => {
+      const structuredContent = SimulateCounterfactualOutputSchema.parse(
+        await simulateCounterfactual(decision_id, fork_source_id),
+      );
 
       return {
-        content: [{ type: "text", text: structuredContent.message }],
+        content: [
+          {
+            type: "text",
+            text: `Built ${structuredContent.branches.real.length} real and ${structuredContent.branches.counterfactual.length} counterfactual cited nodes.`,
+          },
+        ],
         structuredContent,
       };
     },

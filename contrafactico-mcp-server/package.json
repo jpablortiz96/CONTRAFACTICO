@@ -7,7 +7,9 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "check:local": "tsx src/devCheck.ts",
     "dev": "tsx watch src/index.ts",
+    "generate:corpus": "tsx ../scripts/generate_corpus.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

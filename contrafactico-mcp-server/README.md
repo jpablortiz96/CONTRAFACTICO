@@ -11,8 +11,10 @@ This package hosts the CONTRAFÁCTICO tools through a stateless Streamable HTTP 
 
 ```powershell
 npm install
+npm run generate:corpus
 npm run build
 npm run typecheck
+npm run check:local
 npm run dev
 ```
 
@@ -28,8 +30,9 @@ npm run dev
 | --- | --- | --- | --- |
 | `HOST` | No | `0.0.0.0` | HTTP bind host |
 | `PORT` | No | `3000` | HTTP bind port |
+| `USE_LOCAL_CORPUS` | No | `true` | Use deterministic local cited retrieval |
 | `FOUNDRY_IQ_ENDPOINT` | No | None | Foundry IQ endpoint placeholder |
 | `AZURE_OPENAI_ENDPOINT` | No | None | Azure OpenAI endpoint placeholder |
 | `AZURE_OPENAI_DEPLOYMENT` | No | None | Azure OpenAI deployment placeholder |
 
-Credentials are not stored in this package. Production authentication and service integrations are deferred beyond Step 0.
+Credentials are not stored in this package. Step 1A uses only the local corpus. Production authentication and service integrations remain deferred.

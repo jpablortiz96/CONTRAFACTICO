@@ -1,29 +1,35 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import {
-  EmptyToolInputSchema,
-  PlaceholderToolOutputSchema,
-  type PlaceholderToolOutput,
+  LiveForkWatchInputSchema,
+  LiveForkWatchOutputSchema,
 } from "../schemas/index.js";
+import { liveForkWatch } from "../services/decisionAnalysis.js";
 
 export function registerLiveForkWatchTool(server: McpServer): void {
   server.registerTool(
     "live_fork_watch",
     {
       title: "Live Fork Watch",
-      description: "Watch for new evidence that could create a decision fork.",
-      inputSchema: EmptyToolInputSchema,
-      outputSchema: PlaceholderToolOutputSchema,
+      description:
+        "Detect low-readership evidence that contradicts a pending decision premise.",
+      inputSchema: LiveForkWatchInputSchema,
+      outputSchema: LiveForkWatchOutputSchema,
     },
-    async () => {
-      const structuredContent: PlaceholderToolOutput = {
-        status: "not_implemented",
-        tool: "live_fork_watch",
-        message: "Live fork monitoring is not implemented in Step 0.",
-      };
+    async ({ pending_decision_id }) => {
+      const structuredContent = LiveForkWatchOutputSchema.parse(
+        await liveForkWatch(pending_decision_id),
+      );
 
       return {
-        content: [{ type: "text", text: structuredContent.message }],
+        content: [
+          {
+            type: "text",
+            text: structuredContent.alert
+              ? `Fork alert raised for ${pending_decision_id}.`
+              : `No fork alert raised for ${pending_decision_id}.`,
+          },
+        ],
         structuredContent,
       };
     },

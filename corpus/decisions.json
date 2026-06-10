@@ -1,1 +1,70 @@
-[]
+[
+  {
+    "id": "dec_x200_march",
+    "type": "decision",
+    "timestamp": "2026-02-22T15:00:00-05:00",
+    "author": "Mariana Soto (COO)",
+    "intended_audience": [
+      "Mariana Soto (COO)",
+      "Diego Londoño (VP Sales)",
+      "Lucía Herrera (VP Product)",
+      "Tomás Vega (CFO)"
+    ],
+    "readers": [
+      "Mariana Soto (COO)",
+      "Diego Londoño (VP Sales)",
+      "Lucía Herrera (VP Product)",
+      "Tomás Vega (CFO)"
+    ],
+    "title": "Decision: March launch for X-200",
+    "statement": "Launch the X-200 sensor line in March.",
+    "body": "Cordillera Components will launch the X-200 sensor line in March 2026. The decision assumes the supplier will deliver on time, a Q1 launch remains viable, and return risk is low.",
+    "premise_tags": [
+      "supplier_on_time",
+      "q1_launch_viable",
+      "return_risk_low"
+    ],
+    "premises": [
+      "supplier_on_time",
+      "q1_launch_viable",
+      "return_risk_low"
+    ],
+    "contradicts": [],
+    "related_decision_ids": [
+      "dec_x200_march"
+    ],
+    "status": "approved"
+  },
+  {
+    "id": "dec_vendor_switch",
+    "type": "decision",
+    "timestamp": "2026-06-08T14:00:00-05:00",
+    "author": "Ana Restrepo (Procurement)",
+    "intended_audience": [
+      "Mariana Soto (COO)",
+      "Ana Restrepo (Procurement)",
+      "Camilo Torres (Quality)",
+      "Tomás Vega (CFO)",
+      "Lucía Herrera (VP Product)"
+    ],
+    "readers": [
+      "Mariana Soto (COO)",
+      "Ana Restrepo (Procurement)",
+      "Tomás Vega (CFO)"
+    ],
+    "title": "Pending decision: switch enclosure supplier to Vendor B",
+    "statement": "Switch the X-series enclosure supply agreement to Vendor B for the next production cycle.",
+    "body": "The vendor switch remains pending. The working recommendation assumes Vendor B is ready to pass production validation and support the July build.",
+    "premise_tags": [
+      "vendor_b_ready"
+    ],
+    "premises": [
+      "vendor_b_ready"
+    ],
+    "contradicts": [],
+    "related_decision_ids": [
+      "dec_vendor_switch"
+    ],
+    "status": "pending"
+  }
+]

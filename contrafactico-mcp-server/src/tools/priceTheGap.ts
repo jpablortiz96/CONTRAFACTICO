@@ -1,29 +1,33 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import {
-  EmptyToolInputSchema,
-  PlaceholderToolOutputSchema,
-  type PlaceholderToolOutput,
+  PriceTheGapInputSchema,
+  PriceTheGapOutputSchema,
 } from "../schemas/index.js";
+import { priceTheGap } from "../services/decisionAnalysis.js";
 
 export function registerPriceTheGapTool(server: McpServer): void {
   server.registerTool(
     "price_the_gap",
     {
       title: "Price the Gap",
-      description: "Estimate the dollar gap between actual and simulated paths.",
-      inputSchema: EmptyToolInputSchema,
-      outputSchema: PlaceholderToolOutputSchema,
+      description:
+        "Calculate the cited dollar difference between actual and counterfactual outcomes.",
+      inputSchema: PriceTheGapInputSchema,
+      outputSchema: PriceTheGapOutputSchema,
     },
-    async () => {
-      const structuredContent: PlaceholderToolOutput = {
-        status: "not_implemented",
-        tool: "price_the_gap",
-        message: "Gap pricing is not implemented in Step 0.",
-      };
+    async ({ decision_id }) => {
+      const structuredContent = PriceTheGapOutputSchema.parse(
+        await priceTheGap(decision_id),
+      );
 
       return {
-        content: [{ type: "text", text: structuredContent.message }],
+        content: [
+          {
+            type: "text",
+            text: `The cited counterfactual gap is $${structuredContent.delta_usd.toLocaleString("en-US")} USD.`,
+          },
+        ],
         structuredContent,
       };
     },

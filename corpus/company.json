@@ -1,4 +1,8 @@
 {
-  "name": "CONTRAFÁCTICO",
-  "status": "placeholder"
+  "id": "cordillera_components",
+  "name": "Cordillera Components",
+  "description": "A 140-person manufacturer of industrial sensing and monitoring equipment.",
+  "employee_count": 140,
+  "industry": "Industrial sensor manufacturing",
+  "headquarters": "Bogotá, Colombia"
 }

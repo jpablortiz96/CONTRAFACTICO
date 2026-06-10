@@ -20,15 +20,17 @@ CONTRAFÁCTICO is an enterprise agent for examining consequential organizational
 
 ## Status
 
-Step 0 establishes the repository foundation only. Azure resources, production integrations, corpus generation, counterfactual simulation, pricing logic, and the timeline visualization are not implemented yet.
+Step 1A provides a deterministic synthetic corpus and local cited retrieval for testing the decision analysis tools. Azure resources, production integrations, and the timeline visualization are not implemented yet.
 
 ## MCP Server
 
 ```powershell
 Set-Location contrafactico-mcp-server
 npm install
+npm run generate:corpus
 npm run build
 npm run typecheck
+npm run check:local
 npm run dev
 ```
 

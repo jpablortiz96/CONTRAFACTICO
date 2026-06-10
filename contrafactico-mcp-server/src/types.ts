@@ -1,34 +1,71 @@
+export type ArtifactType =
+  | "chat"
+  | "decision"
+  | "document"
+  | "email"
+  | "meeting_transcript"
+  | "memo";
+
+export type DecisionStatus = "approved" | "pending";
+
 export interface Citation {
-  sourceId: string;
+  source_id: string;
   title: string;
-  url?: string;
-  excerpt?: string;
+  span: string;
+  ref_id: string;
 }
 
 export interface Artifact {
   id: string;
+  type: ArtifactType;
+  timestamp: string;
+  author: string;
+  intended_audience: string[];
+  readers: string[];
   title: string;
-  content: string;
+  body: string;
+  premise_tags: string[];
+  contradicts: string[];
+  related_decision_ids: string[];
+  status?: DecisionStatus;
+}
+
+export interface Decision extends Artifact {
+  type: "decision";
+  statement: string;
+  premises: string[];
+  status: DecisionStatus;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  description: string;
+  employee_count: number;
+  industry: string;
+  headquarters: string;
+}
+
+export interface RetrieveResult {
+  answer: string;
   citations: Citation[];
 }
 
-export interface Decision {
-  id: string;
+export interface TimelineNode {
+  source_id: string;
+  type: ArtifactType;
+  timestamp: string;
   title: string;
   summary: string;
-  decidedAt: string;
-  owner?: string;
-  artifactIds: string[];
+  citation_ref: string;
 }
 
-export interface TimelineNode {
+export interface BranchNode {
   id: string;
   label: string;
-  occurredAt: string;
-  kind: "event" | "decision" | "branch";
-  parentId?: string;
-  actual: boolean;
-  deltaUsd?: number;
+  timestamp: string;
+  fact: boolean;
+  citation_ref: string;
 }
 
 export interface ToolResponse<
