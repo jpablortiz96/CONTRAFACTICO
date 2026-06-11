@@ -9,6 +9,7 @@ import {
   rewindDecisionCore,
   simulateCounterfactualCore,
 } from "./services/decisionAnalysis.js";
+import { getDemoStatus } from "./services/evidenceStatus.js";
 import {
   getArtifactDocumentPath,
   loadCompany,
@@ -43,6 +44,45 @@ async function verifyCitationDocument(citation: Citation): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  const previousLocalMode = process.env.USE_LOCAL_CORPUS;
+  const previousKnowledgeBase = process.env.SEARCH_KB_NAME;
+
+  try {
+    process.env.USE_LOCAL_CORPUS = "true";
+    delete process.env.SEARCH_KB_NAME;
+    const localStatus = getDemoStatus();
+    assert.equal(localStatus.ok, true);
+    assert.equal(localStatus.evidence_mode, "local");
+    assert.equal(localStatus.evidence_label, "Local Evidence Mode");
+    assert.equal(localStatus.microsoft_iq, null);
+    assert.equal(localStatus.knowledge_base, null);
+    assert.equal(localStatus.citations_required, true);
+    assert.ok(Number.isFinite(Date.parse(localStatus.generated_at)));
+
+    process.env.USE_LOCAL_CORPUS = "false";
+    process.env.SEARCH_KB_NAME = "status-check-kb";
+    const foundryStatus = getDemoStatus();
+    assert.equal(foundryStatus.evidence_mode, "foundry");
+    assert.equal(foundryStatus.evidence_label, "Foundry IQ Grounded Mode");
+    assert.equal(foundryStatus.microsoft_iq, "Foundry IQ");
+    assert.equal(foundryStatus.knowledge_base, "status-check-kb");
+    record(
+      "demo_status",
+      "local and Foundry evidence modes return the expected public status",
+    );
+  } finally {
+    if (previousLocalMode === undefined) {
+      delete process.env.USE_LOCAL_CORPUS;
+    } else {
+      process.env.USE_LOCAL_CORPUS = previousLocalMode;
+    }
+    if (previousKnowledgeBase === undefined) {
+      delete process.env.SEARCH_KB_NAME;
+    } else {
+      process.env.SEARCH_KB_NAME = previousKnowledgeBase;
+    }
+  }
+
   const [company, decisions, events] = await Promise.all([
     loadCompany(),
     loadDecisions(),
@@ -151,7 +191,7 @@ async function main(): Promise<void> {
     `${returnedCitations.length} returned citations map to markdown documents with exact spans`,
   );
 
-  const previousLocalMode = process.env.USE_LOCAL_CORPUS;
+  const previousAdapterLocalMode = process.env.USE_LOCAL_CORPUS;
   process.env.USE_LOCAL_CORPUS = "true";
   try {
     const adapterRetrieval = await retrieveGrounded(
@@ -167,10 +207,10 @@ async function main(): Promise<void> {
       "retrieveGrounded uses the local corpus unless USE_LOCAL_CORPUS=false",
     );
   } finally {
-    if (previousLocalMode === undefined) {
+    if (previousAdapterLocalMode === undefined) {
       delete process.env.USE_LOCAL_CORPUS;
     } else {
-      process.env.USE_LOCAL_CORPUS = previousLocalMode;
+      process.env.USE_LOCAL_CORPUS = previousAdapterLocalMode;
     }
   }
 

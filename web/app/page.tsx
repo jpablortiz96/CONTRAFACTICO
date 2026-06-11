@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { TimelineTree } from "./components/TimelineTree";
 import type {
@@ -8,6 +8,7 @@ import type {
   DemoAnalysis,
   DemoLiveFork,
   DemoSource,
+  DemoStatus,
 } from "./types";
 
 const apiBaseUrl =
@@ -50,6 +51,7 @@ function highlightEvidence(text: string) {
 }
 
 export default function HomePage() {
+  const [status, setStatus] = useState<DemoStatus>();
   const [analysis, setAnalysis] = useState<DemoAnalysis>();
   const [liveFork, setLiveFork] = useState<DemoLiveFork>();
   const [source, setSource] = useState<DemoSource>();
@@ -57,6 +59,26 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [sourceLoading, setSourceLoading] = useState(false);
   const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    let active = true;
+
+    void fetchJson<DemoStatus>("/demo/status")
+      .then((nextStatus) => {
+        if (active) {
+          setStatus(nextStatus);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setError(serverErrorMessage);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const citationBySource = useMemo(
     () =>
@@ -113,6 +135,11 @@ export default function HomePage() {
   }, []);
 
   const activeCitation = selectedCitation ?? source?.citation_preview;
+  const foundryReferenceOnly =
+    status?.evidence_mode === "foundry" &&
+    activeCitation !== undefined &&
+    activeCitation.source_id.trim().length > 0 &&
+    activeCitation.span.trim().length === 0;
 
   return (
     <main className="page-shell">
@@ -123,7 +150,14 @@ export default function HomePage() {
         <div className="brand-line">
           <span className="brand-mark">C</span>
           <span>Organizational decision intelligence</span>
-          <span className="status-pill">Local evidence mode</span>
+          <span
+            className={`status-pill ${
+              status?.evidence_mode === "foundry" ? "foundry" : ""
+            }`}
+            data-testid="evidence-mode"
+          >
+            {status?.evidence_label ?? "Evidence mode unavailable"}
+          </span>
         </div>
         <p className="kicker">The Org That Didn&apos;t Happen</p>
         <h1>CONTRAFÁCTICO</h1>
@@ -131,6 +165,19 @@ export default function HomePage() {
           Reconstruct the moment a critical fact disappeared, then follow the
           branch the organization never took.
         </p>
+        {status?.microsoft_iq !== null &&
+        status?.microsoft_iq !== undefined ? (
+          <div className="mode-detail">
+            <span className="microsoft-iq-badge">
+              Microsoft IQ: {status.microsoft_iq}
+            </span>
+            {status.knowledge_base !== null ? (
+              <span className="knowledge-base-label">
+                Knowledge base: {status.knowledge_base}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       <section className="prompt-card glass-card">
@@ -221,15 +268,30 @@ export default function HomePage() {
                       <h3>{activeCitation.title}</h3>
                       <code>{source.source_id}</code>
                     </div>
-                    <span className="verified-pill">Exact source span</span>
+                    <span className="verified-pill">
+                      {foundryReferenceOnly
+                        ? "Source reference"
+                        : "Exact source span"}
+                    </span>
                   </div>
-                  <blockquote>
-                    {highlightEvidence(activeCitation.span)}
-                  </blockquote>
+                  {foundryReferenceOnly ? (
+                    <p className="reference-disclosure">
+                      Foundry IQ returned the source reference; the local corpus
+                      mirror is displayed below for inspection.
+                    </p>
+                  ) : (
+                    <blockquote>
+                      {highlightEvidence(activeCitation.span)}
+                    </blockquote>
+                  )}
                   <div className="markdown-preview">
                     <div className="preview-bar">
                       <span>corpus/docs/{source.source_id}.md</span>
-                      <span>read only</span>
+                      <span>
+                        {status?.evidence_mode === "foundry"
+                          ? "local mirror"
+                          : "read only"}
+                      </span>
                     </div>
                     <pre>{highlightEvidence(source.markdown)}</pre>
                   </div>
@@ -253,7 +315,7 @@ export default function HomePage() {
               <span className="eyebrow">Live Fork Watch</span>
               {liveFork?.live_fork.alert ? (
                 <>
-                  <h2>⚠️ Same fork signature detected</h2>
+                  <h2>Same fork signature detected</h2>
                   <p>
                     A recent memo contradicts{" "}
                     <code>
@@ -304,7 +366,11 @@ export default function HomePage() {
 
       <footer>
         <span>CONTRAFÁCTICO</span>
-        <span>Every claim grounded in the Cordillera Components corpus.</span>
+        <span>
+          {status?.evidence_mode === "foundry"
+            ? "Every claim grounded through Foundry IQ."
+            : "Every claim grounded in the Cordillera Components corpus."}
+        </span>
       </footer>
     </main>
   );

@@ -91,6 +91,7 @@ Set `FOUNDRY_DEBUG_SHAPE=true` to print only the top-level response keys and fir
 ## Endpoints
 
 - `GET /health` returns process health and service metadata.
+- `GET /demo/status` returns the public evidence mode without endpoints, keys, or tenant details.
 - `POST /mcp` handles stateless Streamable HTTP MCP requests.
 - `GET /mcp` and `DELETE /mcp` return `405 Method Not Allowed` in stateless mode.
 - `GET /demo/analysis/dec_x200_march` returns the shared rewind, fork, simulation, gap, and citations.

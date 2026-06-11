@@ -12,6 +12,7 @@ import {
   getDemoLiveFork,
   getDemoSource,
 } from "./services/demo.js";
+import { getDemoStatus } from "./services/evidenceStatus.js";
 import { registerFindBranchPointTool } from "./tools/findBranchPoint.js";
 import { registerLiveForkWatchTool } from "./tools/liveForkWatch.js";
 import { registerPriceTheGapTool } from "./tools/priceTheGap.js";
@@ -83,6 +84,10 @@ app.get("/health", (_request: Request, response: Response) => {
     service: serviceMetadata.name,
     version: serviceMetadata.version,
   });
+});
+
+app.get("/demo/status", (_request: Request, response: Response) => {
+  response.status(200).json(getDemoStatus());
 });
 
 app.get(

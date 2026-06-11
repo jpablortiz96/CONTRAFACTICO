@@ -113,3 +113,13 @@ export interface DemoSource {
   markdown: string;
   citation_preview: Citation;
 }
+
+export interface DemoStatus {
+  ok: true;
+  evidence_mode: "local" | "foundry";
+  evidence_label: "Local Evidence Mode" | "Foundry IQ Grounded Mode";
+  microsoft_iq: "Foundry IQ" | null;
+  knowledge_base: string | null;
+  citations_required: true;
+  generated_at: string;
+}

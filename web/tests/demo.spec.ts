@@ -14,6 +14,9 @@ test("rewinds the X-200 decision and opens cited evidence", async ({
   await expect(
     page.getByRole("heading", { name: "CONTRAFÁCTICO" }),
   ).toBeVisible();
+  await expect(page.getByTestId("evidence-mode")).toHaveText(
+    "Local Evidence Mode",
+  );
 
   await page.getByTestId("run-rewind").click();
 

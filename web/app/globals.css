@@ -120,6 +120,12 @@ button {
   font-size: 10px;
 }
 
+.status-pill.foundry {
+  border-color: rgba(142, 233, 255, 0.28);
+  color: var(--cyan);
+  background: rgba(142, 233, 255, 0.07);
+}
+
 .kicker {
   margin: 70px 0 14px;
   color: var(--amber);
@@ -144,6 +150,31 @@ button {
   color: #a6bac4;
   font-size: clamp(17px, 1.7vw, 22px);
   line-height: 1.6;
+}
+
+.mode-detail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.microsoft-iq-badge {
+  padding: 8px 11px;
+  border: 1px solid rgba(142, 233, 255, 0.24);
+  border-radius: 999px;
+  color: var(--cyan);
+  background: rgba(142, 233, 255, 0.06);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.knowledge-base-label {
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
 }
 
 .glass-card {
@@ -518,6 +549,17 @@ blockquote {
   line-height: 1.55;
 }
 
+.reference-disclosure {
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  border: 1px solid rgba(142, 233, 255, 0.16);
+  border-radius: 12px;
+  color: #b8cbd3;
+  background: rgba(142, 233, 255, 0.04);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 mark {
   padding: 1px 4px;
   border-radius: 4px;
@@ -669,6 +711,11 @@ footer {
 
   .status-pill {
     margin-left: 0;
+  }
+
+  .mode-detail {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .hero {
