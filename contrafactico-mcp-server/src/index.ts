@@ -45,10 +45,7 @@ function methodNotAllowed(response: Response): void {
 }
 
 const app = express();
-const demoOrigins = new Set([
-  "http://localhost:3000",
-  "http://localhost:3001",
-]);
+const demoOrigins = new Set(config.corsAllowedOrigins);
 
 app.disable("x-powered-by");
 app.use(express.json({ limit: "1mb" }));

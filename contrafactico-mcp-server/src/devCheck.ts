@@ -17,6 +17,7 @@ import {
   loadMarkdownArtifacts,
   retrieveLocalGrounded,
 } from "./services/localCorpus.js";
+import { retrieveGrounded } from "./services/foundryIq.js";
 
 interface CheckResult {
   check: string;
@@ -149,6 +150,29 @@ async function main(): Promise<void> {
     "local_retrieval",
     `${returnedCitations.length} returned citations map to markdown documents with exact spans`,
   );
+
+  const previousLocalMode = process.env.USE_LOCAL_CORPUS;
+  process.env.USE_LOCAL_CORPUS = "true";
+  try {
+    const adapterRetrieval = await retrieveGrounded(
+      "evt_feb14_supplier supplier_on_time",
+    );
+    assert.ok(adapterRetrieval.citations.length > 0);
+    assert.equal(
+      adapterRetrieval.citations[0]?.source_id,
+      "evt_feb14_supplier",
+    );
+    record(
+      "retrieval_adapter",
+      "retrieveGrounded uses the local corpus unless USE_LOCAL_CORPUS=false",
+    );
+  } finally {
+    if (previousLocalMode === undefined) {
+      delete process.env.USE_LOCAL_CORPUS;
+    } else {
+      process.env.USE_LOCAL_CORPUS = previousLocalMode;
+    }
+  }
 
   for (const result of results) {
     console.log(`PASS ${result.check}: ${result.detail}`);

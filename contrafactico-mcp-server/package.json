@@ -7,6 +7,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "check:foundry": "tsx src/foundrySmoke.ts",
     "check:local": "tsx src/devCheck.ts",
     "dev": "tsx watch src/index.ts",
     "generate:corpus": "tsx ../scripts/generate_corpus.ts",

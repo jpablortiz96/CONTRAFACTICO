@@ -1,13 +1,18 @@
+import {
+  getBooleanEnv,
+  getCsvEnv,
+  getEnv,
+} from "./services/env.js";
+
 const DEFAULT_PORT = 3000;
 const DEFAULT_HOST = "0.0.0.0";
-
-function readOptionalEnvironmentVariable(name: string): string | undefined {
-  const value = process.env[name]?.trim();
-  return value === undefined || value.length === 0 ? undefined : value;
-}
+const DEFAULT_CORS_ORIGINS = [
+  "http://localhost:3001",
+  "http://localhost:3000",
+] as const;
 
 function readPort(): number {
-  const rawPort = readOptionalEnvironmentVariable("PORT");
+  const rawPort = getEnv("PORT");
   if (rawPort === undefined) {
     return DEFAULT_PORT;
   }
@@ -20,33 +25,22 @@ function readPort(): number {
   return port;
 }
 
-function readBooleanEnvironmentVariable(
-  name: string,
-  defaultValue: boolean,
-): boolean {
-  const value = readOptionalEnvironmentVariable(name)?.toLowerCase();
-  if (value === undefined) {
-    return defaultValue;
+function readCorsOrigins(): string[] {
+  const origins = getCsvEnv(
+    "CORS_ALLOWED_ORIGINS",
+    DEFAULT_CORS_ORIGINS,
+  );
+  if (origins.includes("*")) {
+    throw new Error("CORS_ALLOWED_ORIGINS must not contain a wildcard.");
   }
-  if (value === "true") {
-    return true;
-  }
-  if (value === "false") {
-    return false;
-  }
-
-  throw new Error(`${name} must be either "true" or "false".`);
+  return origins;
 }
 
 export const config = Object.freeze({
-  host: readOptionalEnvironmentVariable("HOST") ?? DEFAULT_HOST,
+  host: getEnv("HOST", DEFAULT_HOST) ?? DEFAULT_HOST,
   port: readPort(),
-  useLocalCorpus: readBooleanEnvironmentVariable("USE_LOCAL_CORPUS", true),
-  foundryIqEndpoint: readOptionalEnvironmentVariable("FOUNDRY_IQ_ENDPOINT"),
-  azureOpenAiEndpoint: readOptionalEnvironmentVariable("AZURE_OPENAI_ENDPOINT"),
-  azureOpenAiDeployment: readOptionalEnvironmentVariable(
-    "AZURE_OPENAI_DEPLOYMENT",
-  ),
+  useLocalCorpus: getBooleanEnv("USE_LOCAL_CORPUS", true),
+  corsAllowedOrigins: Object.freeze(readCorsOrigins()),
 });
 
 export const serviceMetadata = Object.freeze({

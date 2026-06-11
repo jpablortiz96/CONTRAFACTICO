@@ -14,13 +14,13 @@ CONTRAFÁCTICO is an enterprise agent for examining consequential organizational
 
 - `corpus/` contains the organizational source corpus and supporting documents.
 - `contrafactico-mcp-server/` contains the stateless Streamable HTTP MCP server.
-- `web/` contains the web experience placeholder.
+- `web/` contains the local visual decision rewind demo.
 - `agent/` contains the Copilot Studio persona and orchestration instructions.
-- `scripts/` contains corpus generation and upload placeholders.
+- `scripts/` contains corpus generation and manual Azure preparation helpers.
 
 ## Status
 
-Step 1B adds a local browser demo for the deterministic cited decision analysis. Azure resources and production integrations are not implemented yet.
+Step 2A preserves local evidence mode and adds an opt-in Foundry IQ retrieval adapter for an existing Azure AI Search knowledge base. Azure resources are not created or deployed by the repository.
 
 ## MCP Server
 
@@ -37,6 +37,8 @@ npm run dev
 The local health endpoint is `GET /health`. The MCP endpoint is `POST /mcp`.
 
 Run the web demo from `web/` with `npm install` and `npm run dev -- -p 3001`, then open `http://localhost:3001`.
+
+Set `USE_LOCAL_CORPUS=true` for deterministic local evidence. Set it to `false` with the required `SEARCH_*` environment variables to use Foundry IQ mode.
 
 ## Security
 
