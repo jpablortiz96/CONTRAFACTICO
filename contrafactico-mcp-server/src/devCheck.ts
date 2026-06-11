@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+
+import {
+  createMcpServer,
+  registeredToolNames,
+} from "./mcpServer.js";
 import type { Citation } from "./types.js";
 import {
   findBranchPointCore,
@@ -10,6 +17,7 @@ import {
   simulateCounterfactualCore,
 } from "./services/decisionAnalysis.js";
 import { getDemoStatus } from "./services/evidenceStatus.js";
+import { analyzeForkFingerprintCore } from "./services/fingerprint.js";
 import {
   getArtifactDocumentPath,
   loadCompany,
@@ -19,6 +27,7 @@ import {
   retrieveLocalGrounded,
 } from "./services/localCorpus.js";
 import { retrieveGrounded } from "./services/foundryIq.js";
+import { scoreBranchReliabilityCore } from "./services/reliability.js";
 
 interface CheckResult {
   check: string;
@@ -41,6 +50,61 @@ async function verifyCitationDocument(citation: Citation): Promise<void> {
     content.includes(citation.span),
     `Citation span must exist in ${citation.source_id}.md`,
   );
+}
+
+function argumentsForTool(
+  toolName: (typeof registeredToolNames)[number],
+): Record<string, unknown> {
+  switch (toolName) {
+    case "rewind_decision":
+    case "find_branch_point":
+    case "price_the_gap":
+      return { decision_id: "dec_x200_march" };
+    case "simulate_counterfactual":
+    case "score_branch_reliability":
+      return {
+        decision_id: "dec_x200_march",
+        fork_source_id: "evt_feb14_supplier",
+      };
+    case "live_fork_watch":
+      return { pending_decision_id: "dec_vendor_switch" };
+    case "analyze_fork_fingerprint":
+      return {};
+  }
+}
+
+async function verifyMcpTools(): Promise<void> {
+  const server = createMcpServer();
+  const client = new Client({
+    name: "contrafactico-local-check",
+    version: "0.1.0",
+  });
+  const [clientTransport, serverTransport] =
+    InMemoryTransport.createLinkedPair();
+
+  try {
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+    const listedTools = await client.listTools();
+    const names = new Set(listedTools.tools.map((tool) => tool.name));
+
+    assert.equal(listedTools.tools.length, registeredToolNames.length);
+    for (const toolName of registeredToolNames) {
+      assert.ok(names.has(toolName), `MCP tool not registered: ${toolName}`);
+      const result = await client.callTool({
+        name: toolName,
+        arguments: argumentsForTool(toolName),
+      });
+      assert.notEqual(result.isError, true, `MCP tool failed: ${toolName}`);
+      assert.ok(
+        result.structuredContent !== undefined,
+        `MCP tool returned no structuredContent: ${toolName}`,
+      );
+    }
+  } finally {
+    await client.close();
+    await server.close();
+  }
 }
 
 async function main(): Promise<void> {
@@ -92,13 +156,26 @@ async function main(): Promise<void> {
   assert.equal(company.name, "Cordillera Components");
   record("company", `${company.name}, ${company.employee_count} employees`);
 
-  assert.equal(decisions.length, 2);
+  assert.equal(decisions.length, 4);
   assert.ok(events.length >= 35);
   const markdownArtifacts = await loadMarkdownArtifacts(events);
   assert.equal(markdownArtifacts.length, events.length);
   record(
     "corpus",
     `${decisions.length} decisions, ${events.length} events, and ${markdownArtifacts.length} markdown documents loaded`,
+  );
+
+  const packagingDecision = decisions.find(
+    (decision) => decision.id === "dec_q4_packaging_rush",
+  );
+  const southDecision = decisions.find(
+    (decision) => decision.id === "dec_south_region_rollout",
+  );
+  assert.equal(packagingDecision?.status, "closed");
+  assert.equal(southDecision?.status, "closed");
+  record(
+    "historical_decisions",
+    "Q4 packaging rush and South Region rollout are closed and documented",
   );
 
   const supplierDocument = await readFile(
@@ -172,6 +249,37 @@ async function main(): Promise<void> {
     `alert ${watch.alert} from ${watch.citation.source_id}`,
   );
 
+  const fingerprint = await analyzeForkFingerprintCore();
+  assert.ok(fingerprint.repeated_in_decisions.length >= 3);
+  assert.deepEqual(
+    new Set(fingerprint.repeated_in_decisions),
+    new Set([
+      "dec_x200_march",
+      "dec_q4_packaging_rush",
+      "dec_south_region_rollout",
+    ]),
+  );
+  assert.equal(fingerprint.total_avoidable_exposure_usd, 142_000);
+  assert.ok(fingerprint.average_readership_ratio < 0.5);
+  assert.ok(fingerprint.evidence.length >= 6);
+  record(
+    "analyze_fork_fingerprint",
+    `${fingerprint.repeated_in_decisions.length} repeated decisions, ${fingerprint.average_readership_ratio} average readership, $${fingerprint.total_avoidable_exposure_usd} USD exposure`,
+  );
+
+  const reliability = await scoreBranchReliabilityCore(
+    "dec_x200_march",
+    "evt_feb14_supplier",
+  );
+  assert.ok(reliability.score >= 80);
+  assert.ok(reliability.unsupported_dropped >= 1);
+  assert.ok(reliability.evidence_backed_nodes >= 6);
+  assert.ok(reliability.label.length > 0);
+  record(
+    "score_branch_reliability",
+    `${reliability.score}% ${reliability.label}, ${reliability.evidence_backed_nodes}/${reliability.total_nodes} evidence-backed nodes`,
+  );
+
   const retrieval = await retrieveLocalGrounded(
     "dec_x200_march supplier_on_time delay",
   );
@@ -181,6 +289,8 @@ async function main(): Promise<void> {
     fork.citation,
     ...pricing.citations,
     watch.citation,
+    ...fingerprint.evidence,
+    ...reliability.citations,
     ...retrieval.citations,
   ];
   for (const citation of returnedCitations) {
@@ -213,6 +323,12 @@ async function main(): Promise<void> {
       process.env.USE_LOCAL_CORPUS = previousAdapterLocalMode;
     }
   }
+
+  await verifyMcpTools();
+  record(
+    "mcp_tools",
+    `${registeredToolNames.length} tools registered and callable`,
+  );
 
   for (const result of results) {
     console.log(`PASS ${result.check}: ${result.detail}`);

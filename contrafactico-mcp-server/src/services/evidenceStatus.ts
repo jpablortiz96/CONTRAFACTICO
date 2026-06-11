@@ -2,6 +2,7 @@ import {
   getBooleanEnv,
   getEnv,
 } from "./env.js";
+import type { RuntimeConfig } from "./config.js";
 
 export type EvidenceMode = "foundry" | "local";
 
@@ -15,8 +16,16 @@ export interface DemoStatusResponse {
   generated_at: string;
 }
 
-export function getDemoStatus(): DemoStatusResponse {
-  const useLocalCorpus = getBooleanEnv("USE_LOCAL_CORPUS", true);
+export function getDemoStatus(
+  config?: Pick<
+    RuntimeConfig,
+    "searchKnowledgeBaseName" | "useLocalCorpus"
+  >,
+): DemoStatusResponse {
+  const useLocalCorpus =
+    config?.useLocalCorpus ?? getBooleanEnv("USE_LOCAL_CORPUS", true);
+  const knowledgeBase =
+    config?.searchKnowledgeBaseName ?? getEnv("SEARCH_KB_NAME");
 
   return {
     ok: true,
@@ -27,7 +36,7 @@ export function getDemoStatus(): DemoStatusResponse {
     microsoft_iq: useLocalCorpus ? null : "Foundry IQ",
     knowledge_base: useLocalCorpus
       ? null
-      : (getEnv("SEARCH_KB_NAME") ?? null),
+      : (knowledgeBase ?? null),
     citations_required: true,
     generated_at: new Date().toISOString(),
   };

@@ -6,7 +6,7 @@ export type ArtifactType =
   | "meeting_transcript"
   | "memo";
 
-export type DecisionStatus = "approved" | "pending";
+export type DecisionStatus = "approved" | "closed" | "pending";
 
 export interface Citation {
   source_id: string;

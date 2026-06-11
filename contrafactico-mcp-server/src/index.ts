@@ -1,35 +1,23 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express, {
   type NextFunction,
   type Request,
   type Response,
 } from "express";
+import helmet from "helmet";
 
 import { config, serviceMetadata } from "./constants.js";
+import { createMcpServer } from "./mcpServer.js";
+import { createAuthMiddleware } from "./services/auth.js";
 import {
   getDemoAnalysis,
   getDemoLiveFork,
   getDemoSource,
 } from "./services/demo.js";
 import { getDemoStatus } from "./services/evidenceStatus.js";
-import { registerFindBranchPointTool } from "./tools/findBranchPoint.js";
-import { registerLiveForkWatchTool } from "./tools/liveForkWatch.js";
-import { registerPriceTheGapTool } from "./tools/priceTheGap.js";
-import { registerRewindDecisionTool } from "./tools/rewindDecision.js";
-import { registerSimulateCounterfactualTool } from "./tools/simulateCounterfactual.js";
-
-function createMcpServer(): McpServer {
-  const server = new McpServer(serviceMetadata);
-
-  registerRewindDecisionTool(server);
-  registerFindBranchPointTool(server);
-  registerSimulateCounterfactualTool(server);
-  registerPriceTheGapTool(server);
-  registerLiveForkWatchTool(server);
-
-  return server;
-}
+import { safeStartupSummary } from "./services/config.js";
+import { analyzeForkFingerprintCore } from "./services/fingerprint.js";
+import { scoreBranchReliabilityCore } from "./services/reliability.js";
 
 function methodNotAllowed(response: Response): void {
   response
@@ -47,8 +35,15 @@ function methodNotAllowed(response: Response): void {
 
 const app = express();
 const demoOrigins = new Set(config.corsAllowedOrigins);
+const authMiddleware = createAuthMiddleware(config);
+const demoAuthMiddleware = config.demoEndpointsPublic
+  ? (_request: Request, _response: Response, next: NextFunction): void => {
+      next();
+    }
+  : authMiddleware;
 
 app.disable("x-powered-by");
+app.use(helmet());
 app.use(express.json({ limit: "1mb" }));
 
 app.use(
@@ -68,7 +63,7 @@ app.use(
 
       response
         .set("Access-Control-Allow-Methods", "GET, OPTIONS")
-        .set("Access-Control-Allow-Headers", "Content-Type")
+        .set("Access-Control-Allow-Headers", "Authorization, Content-Type")
         .sendStatus(204);
       return;
     }
@@ -87,11 +82,12 @@ app.get("/health", (_request: Request, response: Response) => {
 });
 
 app.get("/demo/status", (_request: Request, response: Response) => {
-  response.status(200).json(getDemoStatus());
+  response.status(200).json(getDemoStatus(config));
 });
 
 app.get(
   "/demo/analysis/dec_x200_march",
+  demoAuthMiddleware,
   async (_request: Request, response: Response) => {
     try {
       response
@@ -106,6 +102,7 @@ app.get(
 
 app.get(
   "/demo/live-fork/dec_vendor_switch",
+  demoAuthMiddleware,
   async (_request: Request, response: Response) => {
     try {
       response
@@ -119,7 +116,39 @@ app.get(
 );
 
 app.get(
+  "/demo/fingerprint",
+  demoAuthMiddleware,
+  async (_request: Request, response: Response) => {
+    try {
+      response.status(200).json(await analyzeForkFingerprintCore());
+    } catch (error: unknown) {
+      console.error("Demo fingerprint request failed.", error);
+      response.status(500).json({ error: "Demo fingerprint analysis failed." });
+    }
+  },
+);
+
+app.get(
+  "/demo/reliability/dec_x200_march",
+  demoAuthMiddleware,
+  async (_request: Request, response: Response) => {
+    try {
+      response.status(200).json(
+        await scoreBranchReliabilityCore(
+          "dec_x200_march",
+          "evt_feb14_supplier",
+        ),
+      );
+    } catch (error: unknown) {
+      console.error("Demo reliability request failed.", error);
+      response.status(500).json({ error: "Demo reliability analysis failed." });
+    }
+  },
+);
+
+app.get(
   "/demo/source/:source_id",
+  demoAuthMiddleware,
   async (request: Request, response: Response) => {
     const sourceId = request.params.source_id;
     if (
@@ -144,6 +173,8 @@ app.get(
     }
   },
 );
+
+app.use("/mcp", authMiddleware);
 
 app.post("/mcp", async (request: Request, response: Response) => {
   const server = createMcpServer();
@@ -183,6 +214,12 @@ app.delete("/mcp", (_request: Request, response: Response) => {
 });
 
 const httpServer = app.listen(config.port, config.host, () => {
+  if (config.authMode === "disabled") {
+    console.warn("Authentication disabled for local development.");
+  }
+  console.log(
+    `${serviceMetadata.name} startup ${safeStartupSummary(config)}`,
+  );
   console.log(
     `${serviceMetadata.name} listening on http://${config.host}:${config.port}`,
   );

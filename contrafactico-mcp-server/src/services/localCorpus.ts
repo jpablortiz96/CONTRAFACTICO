@@ -33,7 +33,7 @@ const ArtifactSchema = z
     premise_tags: z.array(z.string().min(1)),
     contradicts: z.array(z.string().min(1)),
     related_decision_ids: z.array(z.string().min(1)),
-    status: z.enum(["approved", "pending"]).optional(),
+    status: z.enum(["approved", "closed", "pending"]).optional(),
   })
   .strict();
 
@@ -41,7 +41,7 @@ const DecisionSchema = ArtifactSchema.extend({
   type: z.literal("decision"),
   statement: z.string().min(1),
   premises: z.array(z.string().min(1)),
-  status: z.enum(["approved", "pending"]),
+  status: z.enum(["approved", "closed", "pending"]),
 }).strict();
 
 const EventSchema = z.discriminatedUnion("type", [

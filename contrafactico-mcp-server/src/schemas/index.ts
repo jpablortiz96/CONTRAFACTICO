@@ -31,7 +31,7 @@ export const ArtifactSchema = z
     premise_tags: z.array(z.string()),
     contradicts: z.array(z.string()),
     related_decision_ids: z.array(z.string()),
-    status: z.enum(["approved", "pending"]).optional(),
+    status: z.enum(["approved", "closed", "pending"]).optional(),
   })
   .strict();
 
@@ -39,7 +39,7 @@ export const DecisionSchema = ArtifactSchema.extend({
   type: z.literal("decision"),
   statement: z.string().min(1),
   premises: z.array(z.string().min(1)),
-  status: z.enum(["approved", "pending"]),
+  status: z.enum(["approved", "closed", "pending"]),
 }).strict();
 
 export const TimelineNodeSchema = z
@@ -161,5 +161,46 @@ export const LiveForkWatchOutputSchema = z
       .strict(),
     pending_decision: DecisionSchema,
     citation: CitationSchema,
+  })
+  .strict();
+
+export const AnalyzeForkFingerprintInputSchema = z
+  .object({
+    organization_id: z.string().min(1).optional(),
+  })
+  .strict();
+
+export const AnalyzeForkFingerprintOutputSchema = z
+  .object({
+    pattern_name: z.string().min(1),
+    summary: z.string().min(1),
+    recurring_signature: z.array(z.string().min(1)).min(1),
+    decisions_analyzed: z.number().int().nonnegative(),
+    repeated_in_decisions: z.array(z.string().min(1)),
+    average_readership_ratio: z.number().min(0).max(1),
+    total_avoidable_exposure_usd: z.number().nonnegative(),
+    top_blind_spot: z.string().min(1),
+    evidence: z.array(CitationSchema),
+    recommendations: z.array(z.string().min(1)),
+  })
+  .strict();
+
+export const ScoreBranchReliabilityInputSchema = z
+  .object({
+    decision_id: z.string().min(1),
+    fork_source_id: z.string().min(1),
+  })
+  .strict();
+
+export const ScoreBranchReliabilityOutputSchema = z
+  .object({
+    score: z.number().min(0).max(100),
+    label: z.string().min(1),
+    evidence_backed_nodes: z.number().int().nonnegative(),
+    total_nodes: z.number().int().nonnegative(),
+    unsupported_dropped: z.number().int().nonnegative(),
+    weakest_link: z.string().min(1),
+    explanation: z.string().min(1),
+    citations: z.array(CitationSchema),
   })
   .strict();

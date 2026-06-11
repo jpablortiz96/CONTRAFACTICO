@@ -12,10 +12,18 @@ import {
   type SimulateCounterfactualResult,
 } from "./decisionAnalysis.js";
 import {
+  analyzeForkFingerprintCore,
+  type ForkFingerprintResult,
+} from "./fingerprint.js";
+import {
   citationForArtifact,
   getEvent,
   readArtifactMarkdown,
 } from "./localCorpus.js";
+import {
+  scoreBranchReliabilityCore,
+  type BranchReliabilityResult,
+} from "./reliability.js";
 
 export interface DemoAnalysisResponse {
   decision_id: string;
@@ -23,6 +31,8 @@ export interface DemoAnalysisResponse {
   fork: FindBranchPointResult;
   simulation: SimulateCounterfactualResult;
   gap: PriceTheGapResult;
+  fingerprint: ForkFingerprintResult;
+  reliability: BranchReliabilityResult;
   citations: Citation[];
   generated_at: string;
 }
@@ -52,10 +62,12 @@ function deduplicateCitations(citations: Citation[]): Citation[] {
 export async function getDemoAnalysis(
   decisionId: string,
 ): Promise<DemoAnalysisResponse> {
-  const [rewind, fork, gap] = await Promise.all([
+  const [rewind, fork, gap, fingerprint, reliability] = await Promise.all([
     rewindDecisionCore(decisionId),
     findBranchPointCore(decisionId),
     priceTheGapCore(decisionId),
+    analyzeForkFingerprintCore(),
+    scoreBranchReliabilityCore(decisionId, "evt_feb14_supplier"),
   ]);
   const simulation = await simulateCounterfactualCore(
     decisionId,
@@ -68,10 +80,14 @@ export async function getDemoAnalysis(
     fork,
     simulation,
     gap,
+    fingerprint,
+    reliability,
     citations: deduplicateCitations([
       ...rewind.citations,
       fork.citation,
       ...gap.citations,
+      ...fingerprint.evidence,
+      ...reliability.citations,
     ]),
     generated_at: new Date().toISOString(),
   };
