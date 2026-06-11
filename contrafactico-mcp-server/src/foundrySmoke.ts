@@ -6,6 +6,15 @@ import { retrieveGrounded } from "./services/foundryIq.js";
 
 const smokeQuery =
   "Find the X-200 supplier delay artifact and cite the evidence that the batch would not arrive before April.";
+const SPAN_PREVIEW_LENGTH = 160;
+
+function spanPreview(span: string): string {
+  const normalized = span.replace(/\s+/g, " ").trim();
+  if (normalized.length <= SPAN_PREVIEW_LENGTH) {
+    return normalized;
+  }
+  return `${normalized.slice(0, SPAN_PREVIEW_LENGTH - 3)}...`;
+}
 
 async function main(): Promise<void> {
   if (getBooleanEnv("USE_LOCAL_CORPUS", true)) {
@@ -22,10 +31,12 @@ async function main(): Promise<void> {
   console.log(`Answer length: ${result.answer.length}`);
   console.log(`Citation count: ${result.citations.length}`);
 
-  const firstCitation = result.citations[0];
-  if (firstCitation !== undefined) {
+  for (const [index, citation] of result.citations.slice(0, 5).entries()) {
     console.log(
-      `First citation: ${firstCitation.source_id} | ${firstCitation.title}`,
+      `Citation ${index + 1}: ` +
+        `source_id=${citation.source_id} | ` +
+        `title=${citation.title} | ` +
+        `span=${spanPreview(citation.span) || "(empty)"}`,
     );
   }
 

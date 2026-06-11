@@ -8,6 +8,9 @@ import { retrieveLocalGrounded } from "./localCorpus.js";
 
 const DEFAULT_SEARCH_API_VERSION = "2026-05-01-preview";
 const REQUEST_TIMEOUT_MS = 45_000;
+const ARTIFACT_ID_PATTERN = /\b((?:dec|evt)_[a-z0-9][a-z0-9_-]*)\b/i;
+const MARKDOWN_FILENAME_PATTERN =
+  /(?:^|[\\/(\s])([a-z0-9][a-z0-9_-]*)\.md(?:$|[?#)\s])/i;
 
 type MessageRole = "assistant" | "system" | "user";
 type JsonRecord = Record<string, unknown>;
@@ -47,9 +50,28 @@ function stringValue(value: unknown): string | undefined {
   return normalized.length === 0 ? undefined : normalized;
 }
 
+function identifierValue(value: unknown): string | undefined {
+  const text = stringValue(value);
+  if (text !== undefined) {
+    return text;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return undefined;
+}
+
 function firstRecord(value: unknown): JsonRecord | undefined {
   if (isRecord(value)) {
     return value;
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return isRecord(parsed) ? parsed : undefined;
+    } catch {
+      return undefined;
+    }
   }
   if (!Array.isArray(value)) {
     return undefined;
@@ -66,6 +88,22 @@ function firstStringFromKeys(
   }
   for (const key of keys) {
     const value = stringValue(record[key]);
+    if (value !== undefined) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function firstIdentifierFromKeys(
+  record: JsonRecord | undefined,
+  keys: readonly string[],
+): string | undefined {
+  if (record === undefined) {
+    return undefined;
+  }
+  for (const key of keys) {
+    const value = identifierValue(record[key]);
     if (value !== undefined) {
       return value;
     }
@@ -120,6 +158,22 @@ function extractAnswer(payload: unknown): string {
   return "";
 }
 
+function firstTextFromKeys(
+  record: JsonRecord | undefined,
+  keys: readonly string[],
+): string | undefined {
+  if (record === undefined) {
+    return undefined;
+  }
+  for (const key of keys) {
+    const text = extractText(record[key]);
+    if (text !== undefined) {
+      return text;
+    }
+  }
+  return undefined;
+}
+
 function appendArray(target: unknown[], value: unknown): void {
   if (Array.isArray(value)) {
     target.push(...value);
@@ -152,6 +206,75 @@ function citationCandidates(payload: unknown): unknown[] {
   return candidates;
 }
 
+function decodeText(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function sourceIdFromMarkdownFilename(value: string): string | undefined {
+  const match = decodeText(value).match(MARKDOWN_FILENAME_PATTERN);
+  return match?.[1]?.toLowerCase();
+}
+
+function artifactIdFromText(value: string): string | undefined {
+  const match = decodeText(value).match(ARTIFACT_ID_PATTERN);
+  return match?.[1]?.toLowerCase();
+}
+
+function firstDerivedValue(
+  values: readonly (string | undefined)[],
+  derive: (value: string) => string | undefined,
+): string | undefined {
+  for (const value of values) {
+    if (value === undefined) {
+      continue;
+    }
+    const derived = derive(value);
+    if (derived !== undefined) {
+      return derived;
+    }
+  }
+  return undefined;
+}
+
+function firstUsefulIdentifier(
+  values: readonly (string | undefined)[],
+): string | undefined {
+  return values.find(
+    (value): value is string =>
+      value !== undefined && !/^\d+$/.test(value),
+  );
+}
+
+function normalizeTitleValue(value: string): string | undefined {
+  const decoded = decodeText(value).trim();
+  if (decoded.length === 0 || /^\d+$/.test(decoded)) {
+    return undefined;
+  }
+
+  const withoutQuery = decoded.split(/[?#]/, 1)[0] ?? decoded;
+  const segments = withoutQuery.split(/[\\/]/);
+  return segments.at(-1)?.trim() || decoded;
+}
+
+function firstUsefulTitle(
+  values: readonly (string | undefined)[],
+): string | undefined {
+  for (const value of values) {
+    if (value === undefined) {
+      continue;
+    }
+    const title = normalizeTitleValue(value);
+    if (title !== undefined) {
+      return title;
+    }
+  }
+  return undefined;
+}
+
 function normalizeCitation(candidate: unknown): Citation | undefined {
   if (!isRecord(candidate)) {
     return undefined;
@@ -159,58 +282,161 @@ function normalizeCitation(candidate: unknown): Citation | undefined {
 
   const sourceData = firstRecord(candidate.sourceData);
   const document = firstRecord(candidate.document);
-  const sourceId =
-    firstStringFromKeys(sourceData, ["source_id", "sourceId", "id"]) ??
-    firstStringFromKeys(document, ["source_id", "sourceId", "id"]) ??
-    firstStringFromKeys(candidate, [
+  const primarySourceIdentifiers = [
+    firstIdentifierFromKeys(sourceData, [
       "source_id",
       "sourceId",
-      "docKey",
       "documentId",
+      "docKey",
+    ]),
+    firstIdentifierFromKeys(document, [
+      "source_id",
+      "sourceId",
+      "documentId",
+      "docKey",
+    ]),
+    firstIdentifierFromKeys(candidate, [
+      "source_id",
+      "sourceId",
+      "documentId",
+      "docKey",
+    ]),
+  ];
+  const fallbackSourceIdentifiers = [
+    firstIdentifierFromKeys(sourceData, [
       "id",
+      "refId",
+      "referenceId",
+    ]),
+    firstIdentifierFromKeys(document, [
+      "id",
+      "refId",
+      "referenceId",
+    ]),
+    firstIdentifierFromKeys(candidate, [
+      "id",
+      "refId",
+      "referenceId",
+    ]),
+  ];
+  const sourceNames = [
+    firstStringFromKeys(sourceData, [
+      "metadata_storage_name",
+      "metadata_storage_path",
+      "title",
+      "fileName",
+      "name",
+    ]),
+    firstStringFromKeys(document, [
+      "metadata_storage_name",
+      "metadata_storage_path",
+      "title",
+      "fileName",
+      "name",
+    ]),
+    firstStringFromKeys(candidate, [
+      "metadata_storage_name",
+      "metadata_storage_path",
+      "blobUrl",
+      "title",
+      "fileName",
+      "name",
+      "docKey",
+    ]),
+  ];
+  const span =
+    firstTextFromKeys(sourceData, [
+      "span",
+      "content",
+      "text",
+      "chunk",
+      "snippet",
+      "excerpt",
+    ]) ??
+    firstTextFromKeys(document, [
+      "span",
+      "content",
+      "text",
+      "chunk",
+      "snippet",
+      "excerpt",
+    ]) ??
+    firstTextFromKeys(candidate, [
+      "span",
+      "content",
+      "text",
+      "chunk",
+      "snippet",
+      "excerpt",
     ]);
+  const sourceId =
+    firstDerivedValue(sourceNames, sourceIdFromMarkdownFilename) ??
+    firstDerivedValue(
+      primarySourceIdentifiers,
+      sourceIdFromMarkdownFilename,
+    ) ??
+    firstDerivedValue(primarySourceIdentifiers, artifactIdFromText) ??
+    firstUsefulIdentifier(primarySourceIdentifiers) ??
+    (span === undefined ? undefined : artifactIdFromText(span)) ??
+    firstDerivedValue(fallbackSourceIdentifiers, artifactIdFromText) ??
+    firstUsefulIdentifier(fallbackSourceIdentifiers) ??
+    primarySourceIdentifiers.find((value) => value !== undefined) ??
+    fallbackSourceIdentifiers.find((value) => value !== undefined);
   if (sourceId === undefined) {
     return undefined;
   }
 
   const title =
-    firstStringFromKeys(sourceData, ["title", "name", "fileName"]) ??
-    firstStringFromKeys(document, ["title", "name", "fileName"]) ??
-    firstStringFromKeys(candidate, ["title", "name", "fileName", "docKey"]) ??
+    firstUsefulTitle([
+      firstStringFromKeys(sourceData, [
+        "title",
+        "fileName",
+        "name",
+        "metadata_storage_name",
+        "metadata_storage_path",
+      ]),
+      firstStringFromKeys(document, [
+        "title",
+        "fileName",
+        "name",
+        "metadata_storage_name",
+        "metadata_storage_path",
+      ]),
+      firstStringFromKeys(candidate, [
+        "title",
+        "fileName",
+        "name",
+        "metadata_storage_name",
+        "metadata_storage_path",
+        "blobUrl",
+      ]),
+    ]) ??
     sourceId;
-  const span =
-    firstStringFromKeys(sourceData, [
-      "span",
-      "content",
-      "text",
-      "excerpt",
-      "chunk",
-    ]) ??
-    firstStringFromKeys(document, [
-      "span",
-      "content",
-      "text",
-      "excerpt",
-      "chunk",
-    ]) ??
-    firstStringFromKeys(candidate, [
-      "span",
-      "content",
-      "text",
-      "excerpt",
-      "chunk",
-      "docKey",
-    ]) ??
-    title;
   const refId =
-    firstStringFromKeys(candidate, ["ref_id", "refId", "referenceId", "id"]) ??
-    firstStringFromKeys(sourceData, ["ref_id", "refId"]) ??
+    firstIdentifierFromKeys(candidate, [
+      "ref_id",
+      "refId",
+      "referenceId",
+      "id",
+    ]) ??
+    firstIdentifierFromKeys(sourceData, [
+      "ref_id",
+      "refId",
+      "referenceId",
+      "id",
+    ]) ??
+    firstIdentifierFromKeys(document, [
+      "ref_id",
+      "refId",
+      "referenceId",
+      "id",
+    ]) ??
     sourceId;
 
   return {
     source_id: sourceId,
     title,
-    span,
+    span: span ?? "",
     ref_id: refId,
   };
 }
@@ -227,6 +453,26 @@ function extractCitations(payload: unknown): Citation[] {
     }
   }
   return Array.from(deduplicated.values());
+}
+
+function printFoundryResponseShape(payload: unknown): void {
+  if (!getBooleanEnv("FOUNDRY_DEBUG_SHAPE", false)) {
+    return;
+  }
+
+  const topLevelKeys = isRecord(payload)
+    ? Object.keys(payload).sort()
+    : [];
+  const firstReference = citationCandidates(payload).find(isRecord);
+  const referenceKeys =
+    firstReference === undefined ? [] : Object.keys(firstReference).sort();
+
+  console.log(
+    `Foundry response keys: ${topLevelKeys.join(", ") || "(none)"}`,
+  );
+  console.log(
+    `Foundry first reference keys: ${referenceKeys.join(", ") || "(none)"}`,
+  );
 }
 
 function normalizeSearchEndpoint(value: string): string {
@@ -344,6 +590,8 @@ export async function retrieveFoundryIqGrounded(
   if (!attempt.response.ok) {
     throw safeHttpError(attempt.response.status, route);
   }
+
+  printFoundryResponseShape(attempt.payload);
 
   return {
     answer: extractAnswer(attempt.payload),

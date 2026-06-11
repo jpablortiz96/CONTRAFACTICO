@@ -84,7 +84,9 @@ npm run check:foundry
 Remove-Item Env:SEARCH_API_KEY
 ```
 
-`check:foundry` prints only answer length, citation count, and the first citation identifier and title. It never prints keys or the complete environment.
+`check:foundry` prints answer length, citation count, and previews for up to five normalized citations. It never prints credentials or the complete environment.
+
+Set `FOUNDRY_DEBUG_SHAPE=true` to print only the top-level response keys and first reference keys. Debug mode never prints credentials or full response bodies.
 
 ## Endpoints
 
