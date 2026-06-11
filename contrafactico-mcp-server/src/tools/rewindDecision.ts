@@ -4,7 +4,7 @@ import {
   RewindDecisionInputSchema,
   RewindDecisionOutputSchema,
 } from "../schemas/index.js";
-import { rewindDecision } from "../services/decisionAnalysis.js";
+import { rewindDecisionCore } from "../services/decisionAnalysis.js";
 
 export function registerRewindDecisionTool(server: McpServer): void {
   server.registerTool(
@@ -18,7 +18,7 @@ export function registerRewindDecisionTool(server: McpServer): void {
     },
     async ({ decision_id }) => {
       const structuredContent = RewindDecisionOutputSchema.parse(
-        await rewindDecision(decision_id),
+        await rewindDecisionCore(decision_id),
       );
 
       return {

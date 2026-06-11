@@ -95,6 +95,10 @@ export function getArtifactDocumentPath(sourceId: string): string {
   return resolve(corpusDirectory, "docs", `${sourceId}.md`);
 }
 
+export async function readArtifactMarkdown(sourceId: string): Promise<string> {
+  return readFile(getArtifactDocumentPath(sourceId), "utf8");
+}
+
 function extractDocumentBody(content: string, sourceId: string): string {
   const marker = "\n## Body\n\n";
   const markerIndex = content.indexOf(marker);
@@ -137,10 +141,7 @@ export async function loadMarkdownArtifacts(
         );
       }
 
-      const content = await readFile(
-        getArtifactDocumentPath(sourceId),
-        "utf8",
-      );
+      const content = await readArtifactMarkdown(sourceId);
       const body = extractDocumentBody(content, sourceId);
       if (body !== event.body) {
         throw new Error(

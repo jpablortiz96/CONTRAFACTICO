@@ -4,7 +4,7 @@ import {
   FindBranchPointInputSchema,
   FindBranchPointOutputSchema,
 } from "../schemas/index.js";
-import { findBranchPoint } from "../services/decisionAnalysis.js";
+import { findBranchPointCore } from "../services/decisionAnalysis.js";
 
 export function registerFindBranchPointTool(server: McpServer): void {
   server.registerTool(
@@ -18,7 +18,7 @@ export function registerFindBranchPointTool(server: McpServer): void {
     },
     async ({ decision_id }) => {
       const structuredContent = FindBranchPointOutputSchema.parse(
-        await findBranchPoint(decision_id),
+        await findBranchPointCore(decision_id),
       );
 
       return {

@@ -4,7 +4,7 @@ import {
   SimulateCounterfactualInputSchema,
   SimulateCounterfactualOutputSchema,
 } from "../schemas/index.js";
-import { simulateCounterfactual } from "../services/decisionAnalysis.js";
+import { simulateCounterfactualCore } from "../services/decisionAnalysis.js";
 
 export function registerSimulateCounterfactualTool(server: McpServer): void {
   server.registerTool(
@@ -18,7 +18,7 @@ export function registerSimulateCounterfactualTool(server: McpServer): void {
     },
     async ({ decision_id, fork_source_id }) => {
       const structuredContent = SimulateCounterfactualOutputSchema.parse(
-        await simulateCounterfactual(decision_id, fork_source_id),
+        await simulateCounterfactualCore(decision_id, fork_source_id),
       );
 
       return {

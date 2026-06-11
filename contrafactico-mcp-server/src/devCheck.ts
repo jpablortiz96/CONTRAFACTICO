@@ -3,11 +3,11 @@ import { readFile } from "node:fs/promises";
 
 import type { Citation } from "./types.js";
 import {
-  findBranchPoint,
-  liveForkWatch,
-  priceTheGap,
-  rewindDecision,
-  simulateCounterfactual,
+  findBranchPointCore,
+  liveForkWatchCore,
+  priceTheGapCore,
+  rewindDecisionCore,
+  simulateCounterfactualCore,
 } from "./services/decisionAnalysis.js";
 import {
   getArtifactDocumentPath,
@@ -85,14 +85,14 @@ async function main(): Promise<void> {
     "evt_mar31_returns.md contains the Q1 returns cost evidence",
   );
 
-  const rewind = await rewindDecision("dec_x200_march");
+  const rewind = await rewindDecisionCore("dec_x200_march");
   assert.ok(rewind.timeline.length >= 6);
   record(
     "rewind_decision",
     `${rewind.timeline.length} cited timeline events`,
   );
 
-  const fork = await findBranchPoint("dec_x200_march");
+  const fork = await findBranchPointCore("dec_x200_march");
   assert.equal(fork.fork_event.id, "evt_feb14_supplier");
   assert.equal(fork.contradiction_strength, 0.95);
   record(
@@ -100,7 +100,7 @@ async function main(): Promise<void> {
     `${fork.fork_event.id}, criticality ${fork.criticality}`,
   );
 
-  const simulation = await simulateCounterfactual(
+  const simulation = await simulateCounterfactualCore(
     "dec_x200_march",
     "evt_feb14_supplier",
   );
@@ -117,13 +117,13 @@ async function main(): Promise<void> {
     `${simulation.branches.real.length} real nodes, ${simulation.branches.counterfactual.length} counterfactual nodes, ${simulation.dropped_unsupported.length} unsupported node dropped`,
   );
 
-  const pricing = await priceTheGap("dec_x200_march");
+  const pricing = await priceTheGapCore("dec_x200_march");
   assert.equal(pricing.real_cost, 80_000);
   assert.equal(pricing.counterfactual_cost, 0);
   assert.equal(pricing.delta_usd, 80_000);
   record("price_the_gap", `$${pricing.delta_usd} USD delta`);
 
-  const watch = await liveForkWatch("dec_vendor_switch");
+  const watch = await liveForkWatchCore("dec_vendor_switch");
   assert.equal(watch.alert, true);
   assert.equal(watch.citation.source_id, "evt_jun07_vendor_validation");
   record(

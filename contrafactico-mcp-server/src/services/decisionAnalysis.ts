@@ -138,7 +138,7 @@ async function requireEvent(eventId: string): Promise<Artifact> {
   return requireValue(await getEvent(eventId), `Event not found: ${eventId}`);
 }
 
-export async function rewindDecision(
+export async function rewindDecisionCore(
   decisionId: string,
 ): Promise<RewindDecisionResult> {
   const [decision, events] = await Promise.all([
@@ -177,7 +177,7 @@ export async function rewindDecision(
   return { decision, timeline, citations };
 }
 
-export async function findBranchPoint(
+export async function findBranchPointCore(
   decisionId: string,
 ): Promise<FindBranchPointResult> {
   const [decision, events] = await Promise.all([
@@ -231,7 +231,7 @@ export async function findBranchPoint(
   };
 }
 
-export async function simulateCounterfactual(
+export async function simulateCounterfactualCore(
   decisionId: string,
   forkSourceId: string,
 ): Promise<SimulateCounterfactualResult> {
@@ -332,7 +332,7 @@ export async function simulateCounterfactual(
   };
 }
 
-export async function priceTheGap(
+export async function priceTheGapCore(
   decisionId: string,
 ): Promise<PriceTheGapResult> {
   if (decisionId !== "dec_x200_march") {
@@ -363,7 +363,7 @@ export async function priceTheGap(
   };
 }
 
-export async function liveForkWatch(
+export async function liveForkWatchCore(
   pendingDecisionId: string,
 ): Promise<LiveForkWatchResult> {
   const decision = await requireDecision(pendingDecisionId);
@@ -371,7 +371,7 @@ export async function liveForkWatch(
     throw new Error(`Decision is not pending: ${pendingDecisionId}`);
   }
 
-  const branchPoint = await findBranchPoint(pendingDecisionId);
+  const branchPoint = await findBranchPointCore(pendingDecisionId);
 
   return {
     alert: branchPoint.criticality >= 0.7,

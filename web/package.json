@@ -2,6 +2,32 @@
   "name": "contrafactico-web",
   "version": "0.1.0",
   "private": true,
-  "description": "Web experience placeholder for CONTRAFÁCTICO.",
-  "license": "MIT"
+  "description": "Local visual decision rewind demo for CONTRAFÁCTICO.",
+  "license": "MIT",
+  "scripts": {
+    "build": "next build",
+    "check:browser": "playwright test",
+    "dev": "next dev",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "d3-force": "3.0.0",
+    "next": "16.2.9",
+    "pixi.js": "7.4.3",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "simplex-noise": "4.0.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.60.0",
+    "@types/d3-force": "3.0.10",
+    "@types/node": "24.0.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.3"
+  },
+  "overrides": {
+    "postcss": "8.5.10"
+  }
 }

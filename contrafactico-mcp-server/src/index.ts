@@ -1,11 +1,17 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express, {
+  type NextFunction,
   type Request,
   type Response,
 } from "express";
 
 import { config, serviceMetadata } from "./constants.js";
+import {
+  getDemoAnalysis,
+  getDemoLiveFork,
+  getDemoSource,
+} from "./services/demo.js";
 import { registerFindBranchPointTool } from "./tools/findBranchPoint.js";
 import { registerLiveForkWatchTool } from "./tools/liveForkWatch.js";
 import { registerPriceTheGapTool } from "./tools/priceTheGap.js";
@@ -39,8 +45,40 @@ function methodNotAllowed(response: Response): void {
 }
 
 const app = express();
+const demoOrigins = new Set([
+  "http://localhost:3000",
+  "http://localhost:3001",
+]);
+
 app.disable("x-powered-by");
 app.use(express.json({ limit: "1mb" }));
+
+app.use(
+  "/demo",
+  (request: Request, response: Response, next: NextFunction) => {
+    const origin = request.header("Origin");
+    if (origin !== undefined && demoOrigins.has(origin)) {
+      response.set("Access-Control-Allow-Origin", origin);
+      response.set("Vary", "Origin");
+    }
+
+    if (request.method === "OPTIONS") {
+      if (origin !== undefined && !demoOrigins.has(origin)) {
+        response.sendStatus(403);
+        return;
+      }
+
+      response
+        .set("Access-Control-Allow-Methods", "GET, OPTIONS")
+        .set("Access-Control-Allow-Headers", "Content-Type")
+        .sendStatus(204);
+      return;
+    }
+
+    response.set("Cache-Control", "no-store");
+    next();
+  },
+);
 
 app.get("/health", (_request: Request, response: Response) => {
   response.status(200).json({
@@ -49,6 +87,61 @@ app.get("/health", (_request: Request, response: Response) => {
     version: serviceMetadata.version,
   });
 });
+
+app.get(
+  "/demo/analysis/dec_x200_march",
+  async (_request: Request, response: Response) => {
+    try {
+      response
+        .status(200)
+        .json(await getDemoAnalysis("dec_x200_march"));
+    } catch (error: unknown) {
+      console.error("Demo analysis request failed.", error);
+      response.status(500).json({ error: "Demo analysis failed." });
+    }
+  },
+);
+
+app.get(
+  "/demo/live-fork/dec_vendor_switch",
+  async (_request: Request, response: Response) => {
+    try {
+      response
+        .status(200)
+        .json(await getDemoLiveFork("dec_vendor_switch"));
+    } catch (error: unknown) {
+      console.error("Demo live fork request failed.", error);
+      response.status(500).json({ error: "Demo live fork analysis failed." });
+    }
+  },
+);
+
+app.get(
+  "/demo/source/:source_id",
+  async (request: Request, response: Response) => {
+    const sourceId = request.params.source_id;
+    if (
+      typeof sourceId !== "string" ||
+      !/^[a-z0-9_]+$/.test(sourceId)
+    ) {
+      response.status(400).json({ error: "Invalid source id." });
+      return;
+    }
+
+    try {
+      const source = await getDemoSource(sourceId);
+      if (source === undefined) {
+        response.status(404).json({ error: "Source not found." });
+        return;
+      }
+
+      response.status(200).json(source);
+    } catch (error: unknown) {
+      console.error("Demo source request failed.", error);
+      response.status(500).json({ error: "Demo source retrieval failed." });
+    }
+  },
+);
 
 app.post("/mcp", async (request: Request, response: Response) => {
   const server = createMcpServer();

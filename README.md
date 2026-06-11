@@ -20,7 +20,7 @@ CONTRAFÁCTICO is an enterprise agent for examining consequential organizational
 
 ## Status
 
-Step 1A provides a deterministic synthetic corpus and local cited retrieval for testing the decision analysis tools. Azure resources, production integrations, and the timeline visualization are not implemented yet.
+Step 1B adds a local browser demo for the deterministic cited decision analysis. Azure resources and production integrations are not implemented yet.
 
 ## MCP Server
 
@@ -35,6 +35,8 @@ npm run dev
 ```
 
 The local health endpoint is `GET /health`. The MCP endpoint is `POST /mcp`.
+
+Run the web demo from `web/` with `npm install` and `npm run dev -- -p 3001`, then open `http://localhost:3001`.
 
 ## Security
 

@@ -23,6 +23,11 @@ npm run dev
 - `GET /health` returns process health and service metadata.
 - `POST /mcp` handles stateless Streamable HTTP MCP requests.
 - `GET /mcp` and `DELETE /mcp` return `405 Method Not Allowed` in stateless mode.
+- `GET /demo/analysis/dec_x200_march` returns the shared rewind, fork, simulation, gap, and citations.
+- `GET /demo/live-fork/dec_vendor_switch` returns the pending vendor decision alert.
+- `GET /demo/source/:source_id` returns a corpus markdown source and citation preview.
+
+The demo endpoints are read-only. Browser CORS is limited to `http://localhost:3000` and `http://localhost:3001`.
 
 ## Runtime Configuration
 

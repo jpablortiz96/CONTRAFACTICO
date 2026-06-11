@@ -4,7 +4,7 @@ import {
   LiveForkWatchInputSchema,
   LiveForkWatchOutputSchema,
 } from "../schemas/index.js";
-import { liveForkWatch } from "../services/decisionAnalysis.js";
+import { liveForkWatchCore } from "../services/decisionAnalysis.js";
 
 export function registerLiveForkWatchTool(server: McpServer): void {
   server.registerTool(
@@ -18,7 +18,7 @@ export function registerLiveForkWatchTool(server: McpServer): void {
     },
     async ({ pending_decision_id }) => {
       const structuredContent = LiveForkWatchOutputSchema.parse(
-        await liveForkWatch(pending_decision_id),
+        await liveForkWatchCore(pending_decision_id),
       );
 
       return {

@@ -4,7 +4,7 @@ import {
   PriceTheGapInputSchema,
   PriceTheGapOutputSchema,
 } from "../schemas/index.js";
-import { priceTheGap } from "../services/decisionAnalysis.js";
+import { priceTheGapCore } from "../services/decisionAnalysis.js";
 
 export function registerPriceTheGapTool(server: McpServer): void {
   server.registerTool(
@@ -18,7 +18,7 @@ export function registerPriceTheGapTool(server: McpServer): void {
     },
     async ({ decision_id }) => {
       const structuredContent = PriceTheGapOutputSchema.parse(
-        await priceTheGap(decision_id),
+        await priceTheGapCore(decision_id),
       );
 
       return {
