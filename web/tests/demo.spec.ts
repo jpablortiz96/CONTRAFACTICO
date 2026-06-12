@@ -14,9 +14,7 @@ test("rewinds the X-200 decision and opens cited evidence", async ({
   await expect(
     page.getByRole("heading", { name: "CONTRAFÁCTICO" }),
   ).toBeVisible();
-  await expect(page.getByTestId("evidence-mode")).toHaveText(
-    "Local Evidence Mode",
-  );
+  await expect(page.getByTestId("evidence-mode")).toContainText("Mode");
 
   await page.getByTestId("run-rewind").click();
 
@@ -54,6 +52,43 @@ test("rewinds the X-200 decision and opens cited evidence", async ({
     .click();
   await expect(page.getByTestId("citation-panel")).toContainText(
     "$80,000 USD",
+  );
+
+  await page.getByTestId("nav-enterprise").click();
+  await expect(page.getByTestId("enterprise-mode")).toBeVisible();
+  await expect(page.getByTestId("decision-registry")).toContainText(
+    "dec_vendor_switch",
+  );
+  await expect(page.getByTestId("ingestion-connectors")).toContainText(
+    "Microsoft 365 / SharePoint / Teams export",
+  );
+  await expect(page.getByTestId("governance-policy")).toContainText(
+    "Human approval required",
+  );
+  await expect(page.getByTestId("audit-runs")).toContainText(
+    "score_branch_reliability",
+  );
+  await expect(page.getByTestId("enterprise-trust-stack")).toContainText(
+    "Foundry IQ grounding",
+  );
+
+  await page.screenshot({
+    path: "test-results/contrafactico-enterprise.png",
+    fullPage: true,
+  });
+
+  await page.getByTestId("nav-trust").click();
+  await expect(page.getByTestId("evidence-trust-mode")).toBeVisible();
+  await expect(page.getByTestId("production-architecture")).toContainText(
+    "Azure Container Apps MCP Server",
+  );
+  await expect(page.getByTestId("production-architecture")).toContainText(
+    "Deployment pending",
+  );
+
+  await page.getByTestId("nav-rewind").click();
+  await expect(page.getByTestId("timeline-gap-badge")).toHaveText(
+    "$80,000 avoidable",
   );
 
   expect(consoleErrors).toEqual([]);

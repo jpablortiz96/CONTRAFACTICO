@@ -1,6 +1,6 @@
 # CONTRAFACTICO MCP Server
 
-This package exposes seven organizational decision tools through a stateless Streamable HTTP MCP endpoint. It supports deterministic local evidence and Foundry IQ knowledge-base retrieval.
+This package exposes ten organizational decision and enterprise product tools through a stateless Streamable HTTP MCP endpoint. It supports deterministic local evidence and Foundry IQ knowledge-base retrieval.
 
 ## Requirements
 
@@ -30,8 +30,13 @@ Run `npm run check:foundry` only after supplying real Foundry environment values
 - `live_fork_watch`
 - `analyze_fork_fingerprint`
 - `score_branch_reliability`
+- `list_decision_registry`
+- `evaluate_governance_policy`
+- `get_enterprise_readiness`
 
 `analyze_fork_fingerprint` compares completed decisions for contradicted premises, low readership, and downstream avoidable cost. `score_branch_reliability` scores the existing simulated branch from direct citation coverage and unsupported claims dropped.
+
+The enterprise tools expose normalized registry records, deterministic policy evaluation, and an honest readiness aggregate with production gaps.
 
 ## Runtime Configuration
 
@@ -120,7 +125,17 @@ Copilot Studio connection and OAuth configuration are intentionally deferred to 
 - `GET /demo/status` is always public and contains no secret configuration.
 - `POST /mcp` is protected according to `AUTH_MODE`.
 - `GET /mcp` and `DELETE /mcp` return `405` after authentication.
-- `/demo/analysis`, `/demo/live-fork`, `/demo/fingerprint`, `/demo/reliability`, and `/demo/source` are public only when `DEMO_ENDPOINTS_PUBLIC=true`.
+- `/demo/analysis`, `/demo/live-fork`, `/demo/fingerprint`, `/demo/reliability`, `/demo/source`, and every enterprise demo endpoint are public only when `DEMO_ENDPOINTS_PUBLIC=true`.
+
+Enterprise endpoints:
+
+- `GET /demo/enterprise`
+- `GET /demo/registry`
+- `GET /demo/connectors`
+- `GET /demo/policies`
+- `GET /demo/audit-runs`
+- `GET /demo/trust-stack`
+- `GET /demo/policy-evaluation/:decision_id`
 
 When `NODE_ENV=production`, `DEMO_ENDPOINTS_PUBLIC` defaults to `false`. The web demo requires it to be explicitly enabled.
 
@@ -139,7 +154,7 @@ In the Inspector UI:
 1. Select **Streamable HTTP**.
 2. Use `http://localhost:3100/mcp` for local testing or `https://YOUR-CONTAINER-APP-FQDN/mcp` for remote testing.
 3. For `dev-bearer` or `entra-jwt`, configure the request header as `Authorization: Bearer YOUR-TOKEN`.
-4. Connect, initialize, list tools, and invoke the seven registered tools.
+4. Connect, initialize, list tools, and invoke the ten registered tools.
 
 Do not expose the Inspector proxy to untrusted networks.
 
@@ -151,9 +166,16 @@ Invoke-RestMethod http://localhost:3100/demo/status
 Invoke-RestMethod http://localhost:3100/demo/fingerprint
 Invoke-RestMethod http://localhost:3100/demo/reliability/dec_x200_march
 Invoke-RestMethod http://localhost:3100/demo/analysis/dec_x200_march
+Invoke-RestMethod http://localhost:3100/demo/enterprise
+Invoke-RestMethod http://localhost:3100/demo/registry
+Invoke-RestMethod http://localhost:3100/demo/connectors
+Invoke-RestMethod http://localhost:3100/demo/policies
+Invoke-RestMethod http://localhost:3100/demo/audit-runs
+Invoke-RestMethod http://localhost:3100/demo/trust-stack
+Invoke-RestMethod http://localhost:3100/demo/policy-evaluation/dec_x200_march
 ```
 
-The local check also initializes an in-memory MCP client, verifies all seven tools are registered, and calls each tool with its demo input:
+The local check also initializes an in-memory MCP client, verifies all ten tools are registered, and calls each tool with its demo input. It validates the enterprise contracts, Rego preview, audit citations, and governance thresholds:
 
 ```powershell
 npm run check:local
@@ -187,3 +209,11 @@ The image uses Node.js 20, installs dependencies with `npm ci`, compiles TypeScr
 See [`scripts/azure/README.md`](../scripts/azure/README.md) for the manual deployment and smoke-test helpers. No Azure resources are created by package installation or verification commands.
 
 Credentials must remain in process environment variables or an external secret store.
+
+## Enterprise Contracts
+
+- `src/services/enterprise.ts` contains deterministic local services for registry, connectors, policies, audit runs, trust modules, readiness, and policy evaluation.
+- `docs/policies/contradicted-premise-low-readership.rego` is an OPA-style policy preview.
+- `docs/ENTERPRISE_TRUST_STACK.md` documents implemented modules and optional integration paths.
+
+The repository does not deploy third-party policy, lineage, observability, or evaluation backends.

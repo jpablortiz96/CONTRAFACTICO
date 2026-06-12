@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -17,6 +19,15 @@ import {
   simulateCounterfactualCore,
 } from "./services/decisionAnalysis.js";
 import { getDemoStatus } from "./services/evidenceStatus.js";
+import {
+  evaluateGovernancePolicyCore,
+  getAuditRunsCore,
+  getDecisionRegistryCore,
+  getEnterpriseReadinessCore,
+  getGovernancePoliciesCore,
+  getIngestionConnectorsCore,
+  getTrustStackCore,
+} from "./services/enterprise.js";
 import { analyzeForkFingerprintCore } from "./services/fingerprint.js";
 import {
   getArtifactDocumentPath,
@@ -69,7 +80,12 @@ function argumentsForTool(
     case "live_fork_watch":
       return { pending_decision_id: "dec_vendor_switch" };
     case "analyze_fork_fingerprint":
+    case "get_enterprise_readiness":
       return {};
+    case "list_decision_registry":
+      return { status: "all" };
+    case "evaluate_governance_policy":
+      return { decision_id: "dec_x200_march" };
   }
 }
 
@@ -280,6 +296,144 @@ async function main(): Promise<void> {
     `${reliability.score}% ${reliability.label}, ${reliability.evidence_backed_nodes}/${reliability.total_nodes} evidence-backed nodes`,
   );
 
+  const registry = await getDecisionRegistryCore();
+  assert.equal(registry.length, 4);
+  assert.deepEqual(
+    new Set(registry.map((decision) => decision.decision_id)),
+    new Set([
+      "dec_x200_march",
+      "dec_vendor_switch",
+      "dec_q4_packaging_rush",
+      "dec_south_region_rollout",
+    ]),
+  );
+  assert.equal(
+    registry.find(
+      (decision) => decision.decision_id === "dec_vendor_switch",
+    )?.status,
+    "watching",
+  );
+  assert.equal((await getDecisionRegistryCore("closed")).length, 3);
+  record(
+    "decision_registry",
+    "4 normalized decisions with ownership, risk, impact, and evidence sources",
+  );
+
+  const connectors = getIngestionConnectorsCore();
+  assert.equal(connectors.length, 7);
+  assert.ok(connectors.some((connector) => connector.status === "ready"));
+  assert.ok(
+    connectors.some((connector) => connector.status === "adapter_stub"),
+  );
+  assert.ok(
+    connectors.some((connector) => connector.status === "planned"),
+  );
+  record(
+    "ingestion_connectors",
+    "7 connector contracts distinguish ready file paths, adapter stubs, and planned integration",
+  );
+
+  const policies = getGovernancePoliciesCore();
+  assert.equal(policies.length, 1);
+  assert.equal(
+    policies[0]?.title,
+    "Contradicted premise with low readership",
+  );
+  assert.ok(policies[0]?.opa_rego_preview.includes("impact_usd >= 25000"));
+  const regoPath = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "..",
+    "docs",
+    "policies",
+    "contradicted-premise-low-readership.rego",
+  );
+  const regoPolicy = await readFile(regoPath, "utf8");
+  assert.ok(regoPolicy.includes("package contrafactico.governance"));
+  assert.ok(regoPolicy.includes("readership_ratio < 0.5"));
+  record(
+    "governance_policy",
+    "OPA-style policy preview and deterministic TypeScript evaluator share the required threshold",
+  );
+
+  const x200Policy = await evaluateGovernancePolicyCore(
+    "dec_x200_march",
+  );
+  assert.equal(x200Policy.blocked_recommendation, true);
+  assert.equal(x200Policy.human_approval_required, true);
+  assert.equal(
+    x200Policy.triggered_policies[0]?.title,
+    "Contradicted premise with low readership",
+  );
+  assert.equal(
+    x200Policy.citations[0]?.source_id,
+    "evt_feb14_supplier",
+  );
+  const vendorPolicy = await evaluateGovernancePolicyCore(
+    "dec_vendor_switch",
+  );
+  assert.equal(vendorPolicy.blocked_recommendation, true);
+  assert.equal(
+    vendorPolicy.citations[0]?.source_id,
+    "evt_jun07_vendor_validation",
+  );
+  const southPolicy = await evaluateGovernancePolicyCore(
+    "dec_south_region_rollout",
+  );
+  assert.equal(southPolicy.blocked_recommendation, false);
+  assert.equal(southPolicy.citations.length, 0);
+  record(
+    "policy_evaluation",
+    "X-200 and vendor switch require human approval; the $20,000 South Region decision stays below threshold",
+  );
+
+  const auditRuns = await getAuditRunsCore();
+  assert.ok(auditRuns.length >= 3);
+  assert.ok(auditRuns.every((run) => run.safe_for_export));
+  assert.ok(
+    auditRuns.every((run) => run.evidence_count === run.citations.length),
+  );
+  record(
+    "audit_runs",
+    `${auditRuns.length} deterministic audit records include evidence counts, unsupported claims, and export safety`,
+  );
+
+  const trustModules = getTrustStackCore();
+  assert.equal(trustModules.length, 6);
+  assert.ok(
+    trustModules.some(
+      (module) =>
+        module.name === "Microsoft Entra ID" &&
+        module.integration_status === "implemented",
+    ),
+  );
+  assert.ok(
+    trustModules.some(
+      (module) =>
+        module.name === "Langfuse-style tool and LLM observability" &&
+        module.integration_status === "documented_path",
+    ),
+  );
+  record(
+    "trust_stack",
+    "6 trust modules expose implemented, adapter contract, and documented path statuses",
+  );
+
+  const readiness = getEnterpriseReadinessCore();
+  assert.ok(
+    readiness.readiness_score >= 78 &&
+      readiness.readiness_score <= 84,
+  );
+  assert.equal(readiness.production_gaps.length, 5);
+  assert.ok(
+    readiness.implemented_capabilities.includes("Foundry IQ grounding"),
+  );
+  assert.equal(readiness.trust_stack.length, trustModules.length);
+  record(
+    "enterprise_readiness",
+    `${readiness.readiness_score}% readiness with ${readiness.production_gaps.length} explicit production gaps`,
+  );
+
   const retrieval = await retrieveLocalGrounded(
     "dec_x200_march supplier_on_time delay",
   );
@@ -291,6 +445,9 @@ async function main(): Promise<void> {
     watch.citation,
     ...fingerprint.evidence,
     ...reliability.citations,
+    ...x200Policy.citations,
+    ...vendorPolicy.citations,
+    ...auditRuns.flatMap((run) => run.citations),
     ...retrieval.citations,
   ];
   for (const citation of returnedCitations) {

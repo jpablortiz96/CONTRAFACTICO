@@ -20,7 +20,115 @@ CONTRAFÁCTICO is an enterprise agent for examining consequential organizational
 
 ## Status
 
-The repository supports local evidence mode, opt-in Foundry IQ retrieval, a stateless seven-tool MCP server, and a visual decision rewind demo. Azure deployment remains an explicit operator action.
+The repository supports local evidence mode, opt-in Foundry IQ retrieval, a stateless ten-tool MCP server, a visual decision rewind, and working enterprise product contracts. Azure deployment, tenant connector configuration, and Copilot Studio connection remain explicit operator actions.
+
+## Enterprise Product Vision
+
+CONTRAFÁCTICO is a Decision Intelligence Layer for Microsoft 365: it turns decisions, premises, evidence, readership, and outcomes into auditable objects, then uses Foundry IQ-grounded retrieval to rewind failures and warn before repeated fork signatures recur.
+
+The productization layer separates six concerns:
+
+- evidence ingestion,
+- normalized decision records,
+- grounded decision analysis,
+- deterministic governance,
+- exportable audit runs,
+- identity, lineage, observability, and evaluation contracts.
+
+## How A Company Would Use It
+
+1. Connect tenant-approved evidence exports or corpus files.
+2. Normalize consequential decisions into the Decision Registry.
+3. Rewind failed or disputed decisions through cited evidence.
+4. Detect repeated organizational blind spots with Fork Fingerprint.
+5. Evaluate high-risk recommendations against governance policies.
+6. Retain citations, unsupported-claim counts, and reliability in Audit Run records.
+
+The repository uses only synthetic Cordillera Components data.
+
+## Decision Registry
+
+The Decision Registry represents each decision with an owner, business unit, lifecycle status, premises, evidence source IDs, risk, expected impact, outcome, avoidable exposure, and last update. The enterprise demo exposes all four synthetic decisions through `GET /demo/registry` and the `list_decision_registry` MCP tool.
+
+## Ingestion Contract
+
+The connector contract documents how evidence maps into decisions and artifacts without making live third-party API calls. Current examples cover:
+
+- Microsoft 365, SharePoint, and Teams exports,
+- Azure Blob and Foundry IQ corpus files,
+- CSV and JSON decision logs,
+- Jira and GitHub exports,
+- ServiceNow incident exports,
+- manual markdown uploads,
+- custom REST adapters.
+
+Each connector is marked `ready`, `adapter_stub`, or `planned`. Ready means a local file contract exists; it does not mean a production tenant connector is deployed.
+
+## Governance Policies
+
+The OPA-style preview at `docs/policies/contradicted-premise-low-readership.rego` blocks a recommendation and requires human approval when:
+
+- evidence contradicts a decision premise,
+- readership is below 50 percent,
+- expected or realized impact is at least $25,000 USD.
+
+The TypeScript evaluator mirrors this policy for the synthetic demo and never takes autonomous action.
+
+## Open Source Trust Stack
+
+`docs/ENTERPRISE_TRUST_STACK.md` describes the integration boundary for:
+
+- OPA-style policy enforcement,
+- OpenLineage-style evidence lineage,
+- Langfuse-style tool and model observability,
+- Evidently-style reliability evaluation,
+- Microsoft Entra ID,
+- Foundry IQ grounding.
+
+Statuses distinguish implemented modules, adapter contracts, and documented paths. No optional observability or policy backend is claimed as deployed.
+
+## Production Architecture
+
+The target deployment path is:
+
+```text
+Microsoft 365 Copilot / Teams
+  ↓
+Copilot Studio Agent
+  ↓
+OAuth / Microsoft Entra ID
+  ↓
+Azure Container Apps MCP Server
+  ↓
+Foundry IQ / Azure AI Search Knowledge Base
+  ↓
+SharePoint, Teams, Blob, Jira, ServiceNow, CSV/JSON, custom APIs
+  ↓
+OPA policy, lineage, observability, evaluation
+```
+
+This is a documented target architecture. The local server, Entra JWT validation support, Foundry IQ adapter, MCP tools, schemas, and demo contracts are implemented; deployment and real tenant wiring remain pending.
+
+## What Is Implemented Vs Pending
+
+Implemented:
+
+- Foundry IQ grounding and local fallback,
+- ten MCP tools,
+- Entra JWT validation support,
+- decision registry and ingestion contracts,
+- governance policy preview and deterministic evaluator,
+- audit run and trust stack contracts,
+- Branch Reliability and Fork Fingerprint,
+- enterprise demo endpoints and UI.
+
+Pending:
+
+- Copilot Studio connection,
+- Azure Container Apps deployment,
+- real tenant connector configuration,
+- production telemetry backend,
+- enterprise Key Vault wiring.
 
 ## Fork Fingerprint
 

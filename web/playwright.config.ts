@@ -5,7 +5,8 @@ export default defineConfig({
   fullyParallel: false,
   reporter: "line",
   use: {
-    baseURL: "http://localhost:3001",
+    baseURL:
+      process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3001",
     channel: "msedge",
     headless: true,
     viewport: {

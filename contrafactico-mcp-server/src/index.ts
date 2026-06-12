@@ -16,6 +16,15 @@ import {
 } from "./services/demo.js";
 import { getDemoStatus } from "./services/evidenceStatus.js";
 import { safeStartupSummary } from "./services/config.js";
+import {
+  evaluateGovernancePolicyCore,
+  getAuditRunsCore,
+  getDecisionRegistryCore,
+  getEnterpriseReadinessCore,
+  getGovernancePoliciesCore,
+  getIngestionConnectorsCore,
+  getTrustStackCore,
+} from "./services/enterprise.js";
 import { analyzeForkFingerprintCore } from "./services/fingerprint.js";
 import { scoreBranchReliabilityCore } from "./services/reliability.js";
 
@@ -142,6 +151,96 @@ app.get(
     } catch (error: unknown) {
       console.error("Demo reliability request failed.", error);
       response.status(500).json({ error: "Demo reliability analysis failed." });
+    }
+  },
+);
+
+app.get(
+  "/demo/enterprise",
+  demoAuthMiddleware,
+  (_request: Request, response: Response) => {
+    response.status(200).json(getEnterpriseReadinessCore());
+  },
+);
+
+app.get(
+  "/demo/registry",
+  demoAuthMiddleware,
+  async (_request: Request, response: Response) => {
+    try {
+      response.status(200).json(await getDecisionRegistryCore());
+    } catch (error: unknown) {
+      console.error("Demo registry request failed.", error);
+      response.status(500).json({ error: "Demo registry failed." });
+    }
+  },
+);
+
+app.get(
+  "/demo/connectors",
+  demoAuthMiddleware,
+  (_request: Request, response: Response) => {
+    response.status(200).json(getIngestionConnectorsCore());
+  },
+);
+
+app.get(
+  "/demo/policies",
+  demoAuthMiddleware,
+  (_request: Request, response: Response) => {
+    response.status(200).json(getGovernancePoliciesCore());
+  },
+);
+
+app.get(
+  "/demo/audit-runs",
+  demoAuthMiddleware,
+  async (_request: Request, response: Response) => {
+    try {
+      response.status(200).json(await getAuditRunsCore());
+    } catch (error: unknown) {
+      console.error("Demo audit runs request failed.", error);
+      response.status(500).json({ error: "Demo audit runs failed." });
+    }
+  },
+);
+
+app.get(
+  "/demo/trust-stack",
+  demoAuthMiddleware,
+  (_request: Request, response: Response) => {
+    response.status(200).json(getTrustStackCore());
+  },
+);
+
+app.get(
+  "/demo/policy-evaluation/:decision_id",
+  demoAuthMiddleware,
+  async (request: Request, response: Response) => {
+    const decisionId = request.params.decision_id;
+    if (
+      typeof decisionId !== "string" ||
+      !/^[a-z0-9_]+$/.test(decisionId)
+    ) {
+      response.status(400).json({ error: "Invalid decision id." });
+      return;
+    }
+
+    try {
+      response
+        .status(200)
+        .json(await evaluateGovernancePolicyCore(decisionId));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Unknown error.";
+      if (message.startsWith("Decision not found")) {
+        response.status(404).json({ error: "Decision not found." });
+        return;
+      }
+      console.error("Demo policy evaluation request failed.", error);
+      response
+        .status(500)
+        .json({ error: "Demo policy evaluation failed." });
     }
   },
 );

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { EnterpriseMode } from "./components/EnterpriseMode";
+import { EvidenceTrust } from "./components/EvidenceTrust";
 import { TimelineTree } from "./components/TimelineTree";
 import type {
   Citation,
@@ -9,6 +11,7 @@ import type {
   DemoLiveFork,
   DemoSource,
   DemoStatus,
+  EnterpriseData,
 } from "./types";
 
 const apiBaseUrl =
@@ -29,6 +32,8 @@ const fingerprintEvidence = [
     label: "South Region training gap",
   },
 ] as const;
+
+type ActiveView = "rewind" | "enterprise" | "trust";
 
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -65,6 +70,7 @@ function highlightEvidence(text: string) {
 }
 
 export default function HomePage() {
+  const [activeView, setActiveView] = useState<ActiveView>("rewind");
   const [status, setStatus] = useState<DemoStatus>();
   const [analysis, setAnalysis] = useState<DemoAnalysis>();
   const [liveFork, setLiveFork] = useState<DemoLiveFork>();
@@ -73,6 +79,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [sourceLoading, setSourceLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const [enterpriseData, setEnterpriseData] =
+    useState<EnterpriseData>();
+  const [enterpriseLoading, setEnterpriseLoading] = useState(false);
+  const [enterpriseError, setEnterpriseError] = useState<string>();
 
   useEffect(() => {
     let active = true;
@@ -93,6 +103,65 @@ export default function HomePage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (activeView === "rewind" || enterpriseData !== undefined) {
+      return;
+    }
+
+    let active = true;
+    setEnterpriseLoading(true);
+    setEnterpriseError(undefined);
+
+    void Promise.all([
+      fetchJson<EnterpriseData["readiness"]>("/demo/enterprise"),
+      fetchJson<EnterpriseData["registry"]>("/demo/registry"),
+      fetchJson<EnterpriseData["connectors"]>("/demo/connectors"),
+      fetchJson<EnterpriseData["policies"]>("/demo/policies"),
+      fetchJson<EnterpriseData["auditRuns"]>("/demo/audit-runs"),
+      fetchJson<EnterpriseData["trustStack"]>("/demo/trust-stack"),
+      fetchJson<EnterpriseData["policyEvaluation"]>(
+        "/demo/policy-evaluation/dec_x200_march",
+      ),
+    ])
+      .then(
+        ([
+          readiness,
+          registry,
+          connectors,
+          policies,
+          auditRuns,
+          trustStack,
+          policyEvaluation,
+        ]) => {
+          if (active) {
+            setEnterpriseData({
+              readiness,
+              registry,
+              connectors,
+              policies,
+              auditRuns,
+              trustStack,
+              policyEvaluation,
+            });
+          }
+        },
+      )
+      .catch(() => {
+        if (active) {
+          setEnterpriseError(serverErrorMessage);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setEnterpriseLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeView, enterpriseData]);
 
   const citationBySource = useMemo(
     () =>
@@ -154,6 +223,16 @@ export default function HomePage() {
     activeCitation !== undefined &&
     activeCitation.source_id.trim().length > 0 &&
     activeCitation.span.trim().length === 0;
+  const heroKicker =
+    activeView === "rewind"
+      ? "The Org That Didn't Happen"
+      : "Enterprise Decision Intelligence Platform";
+  const heroCopy =
+    activeView === "rewind"
+      ? "Reconstruct the moment a critical fact disappeared, then follow the branch the organization never took."
+      : activeView === "enterprise"
+        ? "Onboard evidence, register decisions, enforce human governance, and retain an auditable record of every grounded analysis."
+        : "Inspect the target production architecture, identity boundary, evidence lineage, policy controls, and honest deployment gaps.";
 
   return (
     <main className="page-shell">
@@ -173,12 +252,9 @@ export default function HomePage() {
             {status?.evidence_label ?? "Evidence mode unavailable"}
           </span>
         </div>
-        <p className="kicker">The Org That Didn&apos;t Happen</p>
+        <p className="kicker">{heroKicker}</p>
         <h1>CONTRAFÁCTICO</h1>
-        <p className="hero-copy">
-          Reconstruct the moment a critical fact disappeared, then follow the
-          branch the organization never took.
-        </p>
+        <p className="hero-copy">{heroCopy}</p>
         {status?.microsoft_iq !== null &&
         status?.microsoft_iq !== undefined ? (
           <div className="mode-detail">
@@ -194,6 +270,38 @@ export default function HomePage() {
         ) : null}
       </header>
 
+      <nav className="product-nav" aria-label="Product views">
+        <button
+          type="button"
+          className={activeView === "rewind" ? "active" : ""}
+          data-testid="nav-rewind"
+          onClick={() => setActiveView("rewind")}
+        >
+          <span>01</span>
+          Rewind Demo
+        </button>
+        <button
+          type="button"
+          className={activeView === "enterprise" ? "active" : ""}
+          data-testid="nav-enterprise"
+          onClick={() => setActiveView("enterprise")}
+        >
+          <span>02</span>
+          Enterprise Mode
+        </button>
+        <button
+          type="button"
+          className={activeView === "trust" ? "active" : ""}
+          data-testid="nav-trust"
+          onClick={() => setActiveView("trust")}
+        >
+          <span>03</span>
+          Evidence &amp; Trust
+        </button>
+      </nav>
+
+      {activeView === "rewind" ? (
+        <>
       <section className="prompt-card glass-card">
         <div className="prompt-index">01</div>
         <div className="prompt-copy">
@@ -484,11 +592,48 @@ export default function HomePage() {
           </section>
         </>
       ) : null}
+        </>
+      ) : null}
+
+      {activeView !== "rewind" && enterpriseLoading ? (
+        <section
+          className="loading-scene enterprise-loading"
+          aria-label="Loading enterprise contracts"
+        >
+          <div className="loading-line" />
+          <p>Loading enterprise contracts...</p>
+        </section>
+      ) : null}
+
+      {activeView !== "rewind" && enterpriseError !== undefined ? (
+        <div
+          className="error-card"
+          role="alert"
+          data-testid="enterprise-error"
+        >
+          <strong>Enterprise contracts unavailable</strong>
+          <span>{enterpriseError}</span>
+        </div>
+      ) : null}
+
+      {activeView === "enterprise" &&
+      enterpriseData !== undefined &&
+      !enterpriseLoading ? (
+        <EnterpriseMode data={enterpriseData} />
+      ) : null}
+
+      {activeView === "trust" &&
+      enterpriseData !== undefined &&
+      !enterpriseLoading ? (
+        <EvidenceTrust data={enterpriseData} />
+      ) : null}
 
       <footer>
         <span>CONTRAFÁCTICO</span>
         <span>
-          {status?.evidence_mode === "foundry"
+          {activeView !== "rewind"
+            ? "Enterprise contracts are local and synthetic; production deployment remains explicit."
+            : status?.evidence_mode === "foundry"
             ? "Every claim grounded through Foundry IQ."
             : "Every claim grounded in the Cordillera Components corpus."}
         </span>

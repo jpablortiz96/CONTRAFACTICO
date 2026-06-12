@@ -1,6 +1,10 @@
 # CONTRAFACTICO Web Demo
 
-The browser demo visualizes the X-200 decision rewind, its evidence-backed counterfactual branch, the avoidable dollar gap, source citations, the pending vendor Live Fork alert, Fork Fingerprint, and Branch Reliability Score.
+The browser application includes three product views:
+
+- **Rewind Demo** visualizes the X-200 evidence trail, counterfactual branch, avoidable gap, Live Fork alert, Fork Fingerprint, and Branch Reliability Score.
+- **Enterprise Mode** shows adoption flow, Decision Registry, ingestion connectors, governance policy, audit runs, and the Open Source Trust Stack.
+- **Evidence & Trust** shows the target production architecture, implemented-versus-pending boundary, tenant prerequisites, and integration evidence.
 
 ## Requirements
 
@@ -37,6 +41,18 @@ The result view keeps the core timeline flow intact and adds:
 - **Branch Reliability** with the score, direct citation coverage, unsupported claims dropped, and weakest link.
 - **Organizational Blind Spot** with the repeated fork signature, average warning readership, total avoidable exposure, and evidence pills that open the existing Citation Inspector.
 
+Select **Enterprise Mode** to load working local contracts from:
+
+- `/demo/enterprise`
+- `/demo/registry`
+- `/demo/connectors`
+- `/demo/policies`
+- `/demo/audit-runs`
+- `/demo/trust-stack`
+- `/demo/policy-evaluation/dec_x200_march`
+
+The connector and trust cards state whether each path is ready, an adapter contract, or only documented. The architecture view is explicitly labeled as a target deployment with production work pending.
+
 ## Cloud API
 
 Set the public API base URL before building or starting the web app:
@@ -46,7 +62,7 @@ $env:NEXT_PUBLIC_API_BASE_URL = "https://YOUR-CONTAINER-APP-FQDN"
 npm run build
 ```
 
-The web app consumes `/demo/status`, `/demo/analysis`, `/demo/live-fork`, and `/demo/source`. The server also exposes `/demo/fingerprint` and `/demo/reliability/dec_x200_march` for focused integrations. Set `DEMO_ENDPOINTS_PUBLIC=true` on the server when hosting this demo publicly.
+The web app consumes the rewind and enterprise demo endpoints. Set `DEMO_ENDPOINTS_PUBLIC=true` on the server only when these read-only demo routes should be public.
 
 Never place bearer tokens, API keys, tenant credentials, or other secrets in `NEXT_PUBLIC_*` variables. Next.js exposes those values to the browser.
 
