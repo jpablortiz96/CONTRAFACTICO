@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "build": "next build",
+    "capture:readme": "node scripts/capture-readme-assets.mjs",
     "check:browser": "playwright test",
     "dev": "next dev",
     "start": "next start",
