@@ -1,13 +1,17 @@
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express, {
   type NextFunction,
   type Request,
+  type RequestHandler,
   type Response,
 } from "express";
 import helmet from "helmet";
 
+import {
+  copilotToolNames,
+  createCopilotMcpServer,
+} from "./copilotMcpServer.js";
 import { config, serviceMetadata } from "./constants.js";
-import { createMcpServer } from "./mcpServer.js";
+import { registeredToolNames } from "./mcpServer.js";
 import { createAuthMiddleware } from "./services/auth.js";
 import {
   getDemoAnalysis,
@@ -26,34 +30,76 @@ import {
   getTrustStackCore,
 } from "./services/enterprise.js";
 import { analyzeForkFingerprintCore } from "./services/fingerprint.js";
+import { McpHttpTransportManager } from "./services/mcpHttp.js";
 import { scoreBranchReliabilityCore } from "./services/reliability.js";
 
-function methodNotAllowed(response: Response): void {
-  response
-    .status(405)
-    .set("Allow", "POST")
-    .json({
-      jsonrpc: "2.0",
-      error: {
-        code: -32000,
-        message: "Method not allowed in stateless mode.",
-      },
-      id: null,
-    });
+const MCP_ACCEPT_HEADER = "application/json, text/event-stream";
+
+function normalizeMcpAcceptHeader(request: Request): void {
+  request.headers.accept = MCP_ACCEPT_HEADER;
+
+  let acceptHeaderFound = false;
+  for (let index = 0; index < request.rawHeaders.length; index += 2) {
+    if (request.rawHeaders[index]?.toLowerCase() === "accept") {
+      request.rawHeaders[index + 1] = MCP_ACCEPT_HEADER;
+      acceptHeaderFound = true;
+    }
+  }
+  if (!acceptHeaderFound) {
+    request.rawHeaders.push("Accept", MCP_ACCEPT_HEADER);
+  }
 }
 
 const app = express();
 const demoOrigins = new Set(config.corsAllowedOrigins);
 const authMiddleware = createAuthMiddleware(config);
+const publicMiddleware = (
+  _request: Request,
+  _response: Response,
+  next: NextFunction,
+): void => {
+  next();
+};
+const copilotAuthMiddleware =
+  config.copilotConnectorAuthMode === "public"
+    ? publicMiddleware
+    : authMiddleware;
+const mcpTransportManager = new McpHttpTransportManager(
+  config.mcpTransportMode,
+);
+const copilotTransportManager = new McpHttpTransportManager(
+  config.mcpTransportMode,
+  createCopilotMcpServer,
+);
 const demoAuthMiddleware = config.demoEndpointsPublic
-  ? (_request: Request, _response: Response, next: NextFunction): void => {
-      next();
-    }
+  ? publicMiddleware
   : authMiddleware;
 
 app.disable("x-powered-by");
 app.use(helmet());
 app.use(express.json({ limit: "1mb" }));
+app.use(
+  (request: Request, _response: Response, next: NextFunction): void => {
+    const isMcpEndpoint =
+      request.path === "/mcp" || request.path === "/mcp-copilot";
+    const supportsRelaxation =
+      request.method === "POST" || request.method === "GET";
+    if (
+      config.mcpRelaxAcceptHeader &&
+      isMcpEndpoint &&
+      supportsRelaxation
+    ) {
+      const accept = request.header("Accept")?.toLowerCase() ?? "";
+      if (
+        !accept.includes("application/json") ||
+        !accept.includes("text/event-stream")
+      ) {
+        normalizeMcpAcceptHeader(request);
+      }
+    }
+    next();
+  },
+);
 
 app.use(
   "/demo",
@@ -273,21 +319,12 @@ app.get(
   },
 );
 
-app.use("/mcp", authMiddleware);
-
-app.post("/mcp", async (request: Request, response: Response) => {
-  const server = createMcpServer();
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-  });
-
-  response.on("close", () => {
-    void server.close();
-  });
-
+async function handleMcpRequest(
+  operation: () => Promise<void>,
+  response: Response,
+): Promise<void> {
   try {
-    await server.connect(transport);
-    await transport.handleRequest(request, response, request.body);
+    await operation();
   } catch (error: unknown) {
     console.error("MCP request failed.", error);
 
@@ -302,15 +339,103 @@ app.post("/mcp", async (request: Request, response: Response) => {
       });
     }
   }
-});
+}
 
-app.get("/mcp", (_request: Request, response: Response) => {
-  methodNotAllowed(response);
-});
+function registerMcpEndpoint(
+  endpoint: "/mcp" | "/mcp-copilot",
+  manager: McpHttpTransportManager,
+  toolCount: number,
+  endpointAuthMiddleware: RequestHandler,
+): void {
+  app.get(
+    `${endpoint}/status`,
+    endpointAuthMiddleware,
+    (_request: Request, response: Response) => {
+      if (endpoint === "/mcp-copilot") {
+        response.status(200).json({
+          ok: true,
+          endpoint,
+          tool_count: toolCount,
+          auth_mode: config.copilotConnectorAuthMode,
+          transport_mode: manager.mode,
+          relax_accept_header: config.mcpRelaxAcceptHeader,
+          connector_test_get_ok: config.mcpConnectorTestGetOk,
+        });
+        return;
+      }
 
-app.delete("/mcp", (_request: Request, response: Response) => {
-  methodNotAllowed(response);
-});
+      response.status(200).json({
+        ok: true,
+        endpoint,
+        transport_mode: manager.mode,
+        relax_accept_header: config.mcpRelaxAcceptHeader,
+        active_sessions: manager.activeSessions,
+        auth_mode: config.authMode,
+        tool_count: toolCount,
+      });
+    },
+  );
+
+  app.post(
+    endpoint,
+    endpointAuthMiddleware,
+    (request: Request, response: Response) => {
+      void handleMcpRequest(
+        () => manager.handlePost(request, response),
+        response,
+      );
+    },
+  );
+
+  app.get(
+    endpoint,
+    endpointAuthMiddleware,
+    (request: Request, response: Response) => {
+      if (
+        endpoint === "/mcp-copilot" &&
+        config.mcpConnectorTestGetOk &&
+        (request.header("Mcp-Session-Id")?.trim() ?? "") === ""
+      ) {
+        response.status(200).json({
+          ok: true,
+          endpoint,
+          message:
+            "Copilot MCP facade is reachable. Use POST for MCP JSON-RPC.",
+        });
+        return;
+      }
+
+      void handleMcpRequest(
+        () => manager.handleGet(request, response),
+        response,
+      );
+    },
+  );
+
+  app.delete(
+    endpoint,
+    endpointAuthMiddleware,
+    (request: Request, response: Response) => {
+      void handleMcpRequest(
+        () => manager.handleDelete(request, response),
+        response,
+      );
+    },
+  );
+}
+
+registerMcpEndpoint(
+  "/mcp",
+  mcpTransportManager,
+  registeredToolNames.length,
+  authMiddleware,
+);
+registerMcpEndpoint(
+  "/mcp-copilot",
+  copilotTransportManager,
+  copilotToolNames.length,
+  copilotAuthMiddleware,
+);
 
 const httpServer = app.listen(config.port, config.host, () => {
   if (config.authMode === "disabled") {
@@ -327,4 +452,11 @@ const httpServer = app.listen(config.port, config.host, () => {
 httpServer.on("error", (error: Error) => {
   console.error("HTTP server failed.", error);
   process.exitCode = 1;
+});
+
+httpServer.on("close", () => {
+  void Promise.all([
+    mcpTransportManager.closeAll(),
+    copilotTransportManager.closeAll(),
+  ]);
 });

@@ -2,7 +2,7 @@
   "name": "contrafactico-mcp-server",
   "version": "0.1.0",
   "private": true,
-  "description": "Stateless Streamable HTTP MCP server for CONTRAFÁCTICO.",
+  "description": "Streamable HTTP MCP server for CONTRAFÁCTICO.",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {

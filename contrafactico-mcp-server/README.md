@@ -1,6 +1,6 @@
 # CONTRAFACTICO MCP Server
 
-This package exposes ten organizational decision and enterprise product tools through a stateless Streamable HTTP MCP endpoint. It supports deterministic local evidence and Foundry IQ knowledge-base retrieval.
+This package exposes ten organizational decision and enterprise product tools through a Streamable HTTP MCP endpoint. It supports deterministic local evidence and Foundry IQ knowledge-base retrieval.
 
 ## Requirements
 
@@ -47,12 +47,64 @@ Startup validates:
 - `PORT`
 - `USE_LOCAL_CORPUS`
 - `AUTH_MODE`
+- `COPILOT_CONNECTOR_AUTH_MODE`
+- `MCP_TRANSPORT_MODE`
+- `MCP_RELAX_ACCEPT_HEADER`
+- `MCP_CONNECTOR_TEST_GET_OK`
 - `CORS_ALLOWED_ORIGINS`
 - Foundry variables when `USE_LOCAL_CORPUS=false`
 - `DEV_BEARER_TOKEN` when `AUTH_MODE=dev-bearer`
 - `ENTRA_TENANT_ID` and `ENTRA_AUDIENCE` when `AUTH_MODE=entra-jwt`
 
-The startup summary includes only the service name, port, evidence mode, auth mode, demo visibility, and knowledge-base name. It never includes endpoints, keys, tokens, tenant IDs, or connection strings.
+The startup summary includes only the service name, port, evidence mode, auth mode, MCP transport mode, demo visibility, and knowledge-base name. It never includes endpoints, keys, tokens, tenant IDs, or connection strings.
+
+## MCP Transport Modes
+
+Local development defaults to independent stateless `POST` requests:
+
+```text
+MCP_TRANSPORT_MODE=stateless
+```
+
+Power Platform and Copilot Studio custom connectors should use stateful sessions:
+
+```text
+MCP_TRANSPORT_MODE=stateful
+```
+
+Stateful initialization returns `Mcp-Session-Id`. Subsequent `POST`, `GET`, and `DELETE` requests must send that header. Sessions are held in memory, so a deployment must use one replica or provide equivalent session affinity.
+
+`MCP_RELAX_ACCEPT_HEADER=true` normalizes incomplete `Accept` headers on `/mcp` and `/mcp-copilot` to `application/json, text/event-stream`. This compatibility behavior is limited to MCP `POST` and `GET` requests.
+
+## MCP Endpoints
+
+- `/mcp` is the full technical endpoint with ten tools and complete nested evidence contracts.
+- `/mcp-copilot` is the Power Platform and Copilot Studio facade with four simplified, flat-output tools.
+
+The Copilot facade exposes:
+
+- `rewind_decision_summary`
+- `detect_live_fork`
+- `analyze_enterprise_readiness`
+- `evaluate_decision_governance`
+
+Use [`docs/connectors/contrafactico-mcp-copilot.swagger.yaml`](../docs/connectors/contrafactico-mcp-copilot.swagger.yaml) when creating the Power Platform custom connector. Container Apps should set:
+
+```text
+MCP_TRANSPORT_MODE=stateful
+MCP_RELAX_ACCEPT_HEADER=true
+```
+
+For a hackathon connector configured with no authentication:
+
+```text
+COPILOT_CONNECTOR_AUTH_MODE=public
+MCP_CONNECTOR_TEST_GET_OK=true
+```
+
+`COPILOT_CONNECTOR_AUTH_MODE` defaults to `inherit`, which applies the same authentication as `/mcp`. Public mode affects only `/mcp-copilot` and `/mcp-copilot/status`; `/mcp` remains protected by `AUTH_MODE`.
+
+`MCP_CONNECTOR_TEST_GET_OK` defaults to `false`. When enabled, an unauthenticated `GET /mcp-copilot` without a session ID returns a reachability message for the Power Platform connector Test tab. Stateful GET requests with a session ID still use the MCP transport.
 
 ## Evidence Modes
 
@@ -117,14 +169,18 @@ ENTRA_AUDIENCE=api://YOUR-APPLICATION-ID
 
 The server verifies RS256 signatures through the Microsoft Entra remote JWKS, caches the remote JWK set, and validates issuer, audience, and expiration. Override `ENTRA_ISSUER` or `ENTRA_JWKS_URI` only when the Entra application requires non-default values.
 
-Copilot Studio connection and OAuth configuration are intentionally deferred to the next step.
+The Copilot-compatible MCP facade is implemented. Tenant connector creation and OAuth configuration remain explicit deployment actions.
 
 ## Endpoint Access
 
 - `GET /health` is always public.
 - `GET /demo/status` is always public and contains no secret configuration.
-- `POST /mcp` is protected according to `AUTH_MODE`.
-- `GET /mcp` and `DELETE /mcp` return `405` after authentication.
+- `GET /mcp/status` is protected according to `AUTH_MODE` and returns only safe transport, Accept-relaxation, session-count, auth-mode, and tool-count metadata.
+- `GET /mcp-copilot/status` reports the facade auth mode, transport mode, Accept compatibility, connector GET compatibility, and four-tool count.
+- `POST /mcp`, `GET /mcp`, and `DELETE /mcp` are protected according to `AUTH_MODE`.
+- `/mcp-copilot` inherits `/mcp` authentication unless `COPILOT_CONNECTOR_AUTH_MODE=public`.
+- In stateless mode, `GET` and `DELETE` on either MCP endpoint return `405`.
+- In stateful mode, `GET /mcp` opens the session event stream and `DELETE /mcp` closes the session.
 - `/demo/analysis`, `/demo/live-fork`, `/demo/fingerprint`, `/demo/reliability`, `/demo/source`, and every enterprise demo endpoint are public only when `DEMO_ENDPOINTS_PUBLIC=true`.
 
 Enterprise endpoints:

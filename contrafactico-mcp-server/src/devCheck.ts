@@ -7,6 +7,10 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
 import {
+  copilotToolNames,
+  createCopilotMcpServer,
+} from "./copilotMcpServer.js";
+import {
   createMcpServer,
   registeredToolNames,
 } from "./mcpServer.js";
@@ -18,6 +22,11 @@ import {
   rewindDecisionCore,
   simulateCounterfactualCore,
 } from "./services/decisionAnalysis.js";
+import {
+  readCopilotConnectorAuthMode,
+  readMcpConnectorTestGetOk,
+  readMcpTransportMode,
+} from "./services/config.js";
 import { getDemoStatus } from "./services/evidenceStatus.js";
 import {
   evaluateGovernancePolicyCore,
@@ -123,7 +132,147 @@ async function verifyMcpTools(): Promise<void> {
   }
 }
 
+function copilotArgumentsForTool(
+  toolName: (typeof copilotToolNames)[number],
+): Record<string, unknown> {
+  switch (toolName) {
+    case "rewind_decision_summary":
+    case "evaluate_decision_governance":
+      return { decision_id: "dec_x200_march" };
+    case "detect_live_fork":
+      return { pending_decision_id: "dec_vendor_switch" };
+    case "analyze_enterprise_readiness":
+      return {};
+  }
+}
+
+function assertFlatStructuredContent(
+  value: Record<string, unknown>,
+  toolName: string,
+): void {
+  for (const [key, field] of Object.entries(value)) {
+    const isPrimitive =
+      typeof field === "string" ||
+      typeof field === "number" ||
+      typeof field === "boolean";
+    const isStringArray =
+      Array.isArray(field) &&
+      field.every((entry) => typeof entry === "string");
+    assert.ok(
+      isPrimitive || isStringArray,
+      `${toolName}.${key} must be primitive or a string array`,
+    );
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+async function verifyCopilotMcpTools(): Promise<void> {
+  const server = createCopilotMcpServer();
+  const client = new Client({
+    name: "contrafactico-copilot-local-check",
+    version: "0.1.0",
+  });
+  const [clientTransport, serverTransport] =
+    InMemoryTransport.createLinkedPair();
+
+  try {
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+    const listedTools = await client.listTools();
+    const names = new Set(listedTools.tools.map((tool) => tool.name));
+
+    assert.equal(listedTools.tools.length, copilotToolNames.length);
+    for (const toolName of copilotToolNames) {
+      assert.ok(
+        names.has(toolName),
+        `Copilot MCP tool not registered: ${toolName}`,
+      );
+      const result = await client.callTool({
+        name: toolName,
+        arguments: copilotArgumentsForTool(toolName),
+      });
+      assert.notEqual(
+        result.isError,
+        true,
+        `Copilot MCP tool failed: ${toolName}`,
+      );
+      assert.ok(
+        isRecord(result.structuredContent),
+        `Copilot MCP tool returned no structuredContent: ${toolName}`,
+      );
+      assertFlatStructuredContent(
+        result.structuredContent,
+        toolName,
+      );
+    }
+  } finally {
+    await client.close();
+    await server.close();
+  }
+}
+
 async function main(): Promise<void> {
+  const previousTransportMode = process.env.MCP_TRANSPORT_MODE;
+  const previousCopilotAuthMode =
+    process.env.COPILOT_CONNECTOR_AUTH_MODE;
+  const previousConnectorTestGetOk =
+    process.env.MCP_CONNECTOR_TEST_GET_OK;
+  try {
+    delete process.env.MCP_TRANSPORT_MODE;
+    assert.equal(readMcpTransportMode(), "stateless");
+    process.env.MCP_TRANSPORT_MODE = "stateful";
+    assert.equal(readMcpTransportMode(), "stateful");
+    process.env.MCP_TRANSPORT_MODE = "invalid";
+    assert.throws(
+      () => readMcpTransportMode(),
+      /MCP_TRANSPORT_MODE must be "stateless" or "stateful"/,
+    );
+    record(
+      "mcp_transport_config",
+      "stateless default and explicit stateful mode are validated",
+    );
+
+    delete process.env.COPILOT_CONNECTOR_AUTH_MODE;
+    assert.equal(readCopilotConnectorAuthMode(), "inherit");
+    process.env.COPILOT_CONNECTOR_AUTH_MODE = "public";
+    assert.equal(readCopilotConnectorAuthMode(), "public");
+    process.env.COPILOT_CONNECTOR_AUTH_MODE = "invalid";
+    assert.throws(
+      () => readCopilotConnectorAuthMode(),
+      /COPILOT_CONNECTOR_AUTH_MODE must be "inherit" or "public"/,
+    );
+
+    delete process.env.MCP_CONNECTOR_TEST_GET_OK;
+    assert.equal(readMcpConnectorTestGetOk(), false);
+    process.env.MCP_CONNECTOR_TEST_GET_OK = "true";
+    assert.equal(readMcpConnectorTestGetOk(), true);
+    record(
+      "copilot_connector_config",
+      "inherited auth and disabled connector GET default safely; public demo mode is explicit",
+    );
+  } finally {
+    if (previousTransportMode === undefined) {
+      delete process.env.MCP_TRANSPORT_MODE;
+    } else {
+      process.env.MCP_TRANSPORT_MODE = previousTransportMode;
+    }
+    if (previousCopilotAuthMode === undefined) {
+      delete process.env.COPILOT_CONNECTOR_AUTH_MODE;
+    } else {
+      process.env.COPILOT_CONNECTOR_AUTH_MODE =
+        previousCopilotAuthMode;
+    }
+    if (previousConnectorTestGetOk === undefined) {
+      delete process.env.MCP_CONNECTOR_TEST_GET_OK;
+    } else {
+      process.env.MCP_CONNECTOR_TEST_GET_OK =
+        previousConnectorTestGetOk;
+    }
+  }
+
   const previousLocalMode = process.env.USE_LOCAL_CORPUS;
   const previousKnowledgeBase = process.env.SEARCH_KB_NAME;
 
@@ -485,6 +634,12 @@ async function main(): Promise<void> {
   record(
     "mcp_tools",
     `${registeredToolNames.length} tools registered and callable`,
+  );
+
+  await verifyCopilotMcpTools();
+  record(
+    "copilot_mcp_tools",
+    `${copilotToolNames.length} flat-output tools registered and callable`,
   );
 
   for (const result of results) {

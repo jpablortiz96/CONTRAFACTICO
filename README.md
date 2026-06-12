@@ -13,14 +13,14 @@ CONTRAFÁCTICO is an enterprise agent for examining consequential organizational
 ## Repository
 
 - `corpus/` contains the organizational source corpus and supporting documents.
-- `contrafactico-mcp-server/` contains the stateless Streamable HTTP MCP server.
+- `contrafactico-mcp-server/` contains the Streamable HTTP MCP server.
 - `web/` contains the local visual decision rewind demo.
 - `agent/` contains the Copilot Studio persona and orchestration instructions.
 - `scripts/` contains corpus generation and manual Azure preparation helpers.
 
 ## Status
 
-The repository supports local evidence mode, opt-in Foundry IQ retrieval, a stateless ten-tool MCP server, a visual decision rewind, and working enterprise product contracts. Azure deployment, tenant connector configuration, and Copilot Studio connection remain explicit operator actions.
+The repository supports local evidence mode, opt-in Foundry IQ retrieval, a ten-tool technical MCP endpoint, a four-tool Copilot Studio facade, stateless and stateful Streamable HTTP modes, a visual decision rewind, and working enterprise product contracts. Azure deployment and tenant connector configuration remain explicit operator actions.
 
 ## Enterprise Product Vision
 
@@ -150,7 +150,7 @@ npm run check:local
 npm run dev
 ```
 
-The local health endpoint is `GET /health`. The MCP endpoint is `POST /mcp`.
+The local health endpoint is `GET /health`. `/mcp` exposes all ten protected technical tools. The hackathon Power Platform connector can use public `/mcp-copilot` with `COPILOT_CONNECTOR_AUTH_MODE=public`, `MCP_CONNECTOR_TEST_GET_OK=true`, `MCP_TRANSPORT_MODE=stateful`, and `MCP_RELAX_ACCEPT_HEADER=true`.
 
 Run the web demo from `web/` with `npm install` and `npm run dev -- -p 3001`, then open `http://localhost:3001`.
 

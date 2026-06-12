@@ -128,6 +128,10 @@ Set safe runtime values and secret process variables first:
 ```powershell
 $env:AUTH_MODE = "dev-bearer"
 $env:DEV_BEARER_TOKEN = Read-Host "Remote smoke bearer token"
+$env:COPILOT_CONNECTOR_AUTH_MODE = "public"
+$env:MCP_TRANSPORT_MODE = "stateful"
+$env:MCP_RELAX_ACCEPT_HEADER = "true"
+$env:MCP_CONNECTOR_TEST_GET_OK = "true"
 $env:USE_LOCAL_CORPUS = "false"
 $env:DEMO_ENDPOINTS_PUBLIC = "true"
 $env:PORT = "3000"
@@ -157,11 +161,30 @@ The script:
 - uses a system-assigned identity with `AcrPull` for ACR image access;
 - stores Search, development bearer, and optional AOAI keys as Container Apps secrets;
 - configures safe values as regular environment variables;
+- defaults `MCP_TRANSPORT_MODE` to `stateful` for Power Platform and Copilot Studio compatibility;
+- defaults `MCP_RELAX_ACCEPT_HEADER` to `true` so connector requests satisfy the MCP SDK media-type contract;
+- defaults Copilot connector authentication to `inherit` and connector-test GET compatibility to `false`;
+- limits stateful deployments to one replica because sessions are held in memory;
 - enables external ingress and prints only the final health, status, and MCP URLs.
 
 For an initial deployment without `AcrName`, pass a fully qualified public or already accessible registry path through `ImageName`.
 
 Use `AUTH_MODE=entra-jwt` with `ENTRA_TENANT_ID` and `ENTRA_AUDIENCE` for the production OAuth preparation path. The deployment script never prints those values.
+
+Power Platform and Copilot Studio custom connectors should use:
+
+```text
+MCP_TRANSPORT_MODE=stateful
+MCP_RELAX_ACCEPT_HEADER=true
+COPILOT_CONNECTOR_AUTH_MODE=public
+MCP_CONNECTOR_TEST_GET_OK=true
+```
+
+Stateful mode supports `POST`, `GET`, and `DELETE` on `/mcp` using the `Mcp-Session-Id` returned by initialization. Stateless mode remains available for clients that use independent `POST` requests.
+
+Use `/mcp-copilot` for the Power Platform custom connector. Its OpenAPI definition is [`docs/connectors/contrafactico-mcp-copilot.swagger.yaml`](../../docs/connectors/contrafactico-mcp-copilot.swagger.yaml).
+
+Public Copilot mode is intended for the hackathon connector configured with no authentication. It never changes `/mcp`, which remains protected by `AUTH_MODE`.
 
 ## 10. Remote Smoke Test
 
@@ -173,4 +196,4 @@ $token = Read-Host "Bearer token"
 Remove-Variable token
 ```
 
-The smoke helper checks `/health`, `/demo/status`, and MCP initialization. It prints status codes and minimal public metadata without printing the bearer token.
+The smoke helper checks `/health`, `/demo/status`, `/mcp/status`, MCP initialization, `tools/list`, and the stateful `GET` and `DELETE` lifecycle when initialization returns a session ID. It prints status codes and minimal public metadata without printing the bearer token.

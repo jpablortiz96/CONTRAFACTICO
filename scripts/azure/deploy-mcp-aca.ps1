@@ -95,6 +95,10 @@ if (-not [int]::TryParse($portText, [ref]$port) -or $port -lt 1 -or $port -gt 65
 
 $useLocalCorpus = Get-EnvironmentValue -Name "USE_LOCAL_CORPUS" -DefaultValue "true"
 $authMode = Require-EnvironmentValue -Name "AUTH_MODE"
+$copilotConnectorAuthMode = Get-EnvironmentValue -Name "COPILOT_CONNECTOR_AUTH_MODE" -DefaultValue "inherit"
+$mcpTransportMode = Get-EnvironmentValue -Name "MCP_TRANSPORT_MODE" -DefaultValue "stateful"
+$mcpRelaxAcceptHeader = Get-EnvironmentValue -Name "MCP_RELAX_ACCEPT_HEADER" -DefaultValue "true"
+$mcpConnectorTestGetOk = Get-EnvironmentValue -Name "MCP_CONNECTOR_TEST_GET_OK" -DefaultValue "false"
 $demoEndpointsPublic = Get-EnvironmentValue -Name "DEMO_ENDPOINTS_PUBLIC" -DefaultValue "false"
 
 if ($useLocalCorpus -notin @("true", "false")) {
@@ -103,15 +107,33 @@ if ($useLocalCorpus -notin @("true", "false")) {
 if ($demoEndpointsPublic -notin @("true", "false")) {
     throw "DEMO_ENDPOINTS_PUBLIC must be true or false."
 }
+if ($mcpTransportMode -notin @("stateless", "stateful")) {
+    throw "MCP_TRANSPORT_MODE must be stateless or stateful."
+}
+if ($mcpRelaxAcceptHeader -notin @("true", "false")) {
+    throw "MCP_RELAX_ACCEPT_HEADER must be true or false."
+}
+if ($copilotConnectorAuthMode -notin @("inherit", "public")) {
+    throw "COPILOT_CONNECTOR_AUTH_MODE must be inherit or public."
+}
+if ($mcpConnectorTestGetOk -notin @("true", "false")) {
+    throw "MCP_CONNECTOR_TEST_GET_OK must be true or false."
+}
 if ($authMode -notin @("dev-bearer", "entra-jwt")) {
     throw "Production deployment requires AUTH_MODE=dev-bearer or AUTH_MODE=entra-jwt."
 }
+
+$maxReplicas = if ($mcpTransportMode -eq "stateful") { 1 } else { 3 }
 
 $safeEnvironment = [System.Collections.Generic.List[string]]::new()
 $safeEnvironment.Add("NODE_ENV=production")
 $safeEnvironment.Add("PORT=$port")
 $safeEnvironment.Add("USE_LOCAL_CORPUS=$useLocalCorpus")
 $safeEnvironment.Add("AUTH_MODE=$authMode")
+$safeEnvironment.Add("COPILOT_CONNECTOR_AUTH_MODE=$copilotConnectorAuthMode")
+$safeEnvironment.Add("MCP_TRANSPORT_MODE=$mcpTransportMode")
+$safeEnvironment.Add("MCP_RELAX_ACCEPT_HEADER=$mcpRelaxAcceptHeader")
+$safeEnvironment.Add("MCP_CONNECTOR_TEST_GET_OK=$mcpConnectorTestGetOk")
 $safeEnvironment.Add("DEMO_ENDPOINTS_PUBLIC=$demoEndpointsPublic")
 
 foreach ($name in @(
@@ -295,7 +317,7 @@ if (-not $appExists) {
         "--ingress", "external",
         "--target-port", "$createPort",
         "--min-replicas", "0",
-        "--max-replicas", "3",
+        "--max-replicas", "$maxReplicas",
         "--only-show-errors",
         "--output", "none"
     )) {
@@ -394,7 +416,7 @@ foreach ($item in @(
     "--resource-group", $ResourceGroup,
     "--image", $imageReference,
     "--min-replicas", "0",
-    "--max-replicas", "3",
+    "--max-replicas", "$maxReplicas",
     "--only-show-errors",
     "--output", "none",
     "--set-env-vars"
@@ -430,3 +452,6 @@ Write-Output "Container App: $ContainerAppName"
 Write-Output "Health: https://$fqdn/health"
 Write-Output "Status: https://$fqdn/demo/status"
 Write-Output "MCP: https://$fqdn/mcp"
+Write-Output "Copilot MCP: https://$fqdn/mcp-copilot"
+Write-Output "MCP transport mode: $mcpTransportMode"
+Write-Output "Copilot connector auth mode: $copilotConnectorAuthMode"

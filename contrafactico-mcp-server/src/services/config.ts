@@ -14,7 +14,9 @@ const DEFAULT_CORS_ORIGINS = [
 ] as const;
 
 export type AuthMode = "dev-bearer" | "disabled" | "entra-jwt";
+export type CopilotConnectorAuthMode = "inherit" | "public";
 export type EvidenceMode = "foundry" | "local";
+export type McpTransportMode = "stateful" | "stateless";
 
 export interface RuntimeConfig {
   nodeEnv: string;
@@ -26,6 +28,10 @@ export interface RuntimeConfig {
   corsAllowedOrigins: readonly string[];
   demoEndpointsPublic: boolean;
   authMode: AuthMode;
+  copilotConnectorAuthMode: CopilotConnectorAuthMode;
+  mcpTransportMode: McpTransportMode;
+  mcpRelaxAcceptHeader: boolean;
+  mcpConnectorTestGetOk: boolean;
   devBearerToken?: string;
   entraTenantId?: string;
   entraAudience?: string;
@@ -127,6 +133,30 @@ function readAuthMode(isProduction: boolean): AuthMode {
   return configured;
 }
 
+export function readMcpTransportMode(): McpTransportMode {
+  const configured = getEnv("MCP_TRANSPORT_MODE", "stateless");
+  if (configured !== "stateless" && configured !== "stateful") {
+    throw new Error(
+      'MCP_TRANSPORT_MODE must be "stateless" or "stateful".',
+    );
+  }
+  return configured;
+}
+
+export function readCopilotConnectorAuthMode(): CopilotConnectorAuthMode {
+  const configured = getEnv("COPILOT_CONNECTOR_AUTH_MODE", "inherit");
+  if (configured !== "inherit" && configured !== "public") {
+    throw new Error(
+      'COPILOT_CONNECTOR_AUTH_MODE must be "inherit" or "public".',
+    );
+  }
+  return configured;
+}
+
+export function readMcpConnectorTestGetOk(): boolean {
+  return getBooleanEnv("MCP_CONNECTOR_TEST_GET_OK", false);
+}
+
 export function loadConfig(): Readonly<RuntimeConfig> {
   const nodeEnv = getEnv("NODE_ENV", "development") ?? "development";
   const isProduction = nodeEnv === "production";
@@ -156,6 +186,13 @@ export function loadConfig(): Readonly<RuntimeConfig> {
       !isProduction,
     ),
     authMode,
+    copilotConnectorAuthMode: readCopilotConnectorAuthMode(),
+    mcpTransportMode: readMcpTransportMode(),
+    mcpRelaxAcceptHeader: getBooleanEnv(
+      "MCP_RELAX_ACCEPT_HEADER",
+      true,
+    ),
+    mcpConnectorTestGetOk: readMcpConnectorTestGetOk(),
   };
 
   if (!useLocalCorpus) {
@@ -191,6 +228,10 @@ export function safeStartupSummary(config: RuntimeConfig): string {
     `port=${config.port}`,
     `evidence_mode=${config.evidenceMode}`,
     `auth_mode=${config.authMode}`,
+    `copilot_connector_auth_mode=${config.copilotConnectorAuthMode}`,
+    `mcp_transport_mode=${config.mcpTransportMode}`,
+    `mcp_relax_accept_header=${config.mcpRelaxAcceptHeader ? "yes" : "no"}`,
+    `mcp_connector_test_get_ok=${config.mcpConnectorTestGetOk ? "yes" : "no"}`,
     `demo_endpoints_public=${config.demoEndpointsPublic ? "yes" : "no"}`,
     `knowledge_base=${knowledgeBase}`,
   ].join(" ");
