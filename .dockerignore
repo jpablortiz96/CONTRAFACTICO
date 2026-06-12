@@ -12,3 +12,7 @@ coverage
 playwright-report
 test-results
 *.log
+web/.next
+web/node_modules
+**/.next
+**/node_modules
