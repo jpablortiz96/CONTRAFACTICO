@@ -20,7 +20,15 @@ CONTRAFÁCTICO is an enterprise agent for examining consequential organizational
 
 ## Status
 
-Step 2A preserves local evidence mode and adds an opt-in Foundry IQ retrieval adapter for an existing Azure AI Search knowledge base. Azure resources are not created or deployed by the repository.
+The repository supports local evidence mode, opt-in Foundry IQ retrieval, a stateless seven-tool MCP server, and a visual decision rewind demo. Azure deployment remains an explicit operator action.
+
+## Fork Fingerprint
+
+Fork Fingerprint compares historical decisions to surface recurring blind spots where premise-changing evidence existed before approval but reached less than half of the decision group. The demo grounds the detected pattern in warning and cost artifacts from three decisions.
+
+## Branch Reliability Score
+
+Branch Reliability Score exposes the evidence contract behind a simulated counterfactual. It reports cited branch nodes, unsupported claims dropped by the engine, the weakest supported dependency, and a bounded confidence score.
 
 ## MCP Server
 

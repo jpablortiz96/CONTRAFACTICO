@@ -27,10 +27,16 @@ test("rewinds the X-200 decision and opens cited evidence", async ({
   await expect(page.getByTestId("live-fork-panel")).toContainText(
     "Same fork signature detected",
   );
+  await expect(page.getByTestId("branch-reliability")).toContainText(
+    "92%",
+  );
+  await expect(page.getByTestId("fork-fingerprint")).toContainText(
+    "$142,000 avoidable exposure",
+  );
 
-  await page
-    .getByTestId("timeline-node-evt_feb14_supplier-supplier-delay")
-    .click();
+  await page.getByTestId(
+    "fingerprint-source-evt_feb14_supplier",
+  ).click();
   await expect(page.getByTestId("citation-panel")).toContainText(
     "evt_feb14_supplier",
   );

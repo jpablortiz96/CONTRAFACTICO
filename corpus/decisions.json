@@ -1,5 +1,71 @@
 [
   {
+    "id": "dec_south_region_rollout",
+    "type": "decision",
+    "timestamp": "2025-04-28T15:15:00-05:00",
+    "author": "Diego Londoño (VP Sales)",
+    "intended_audience": [
+      "Mariana Soto (COO)",
+      "Diego Londoño (VP Sales)",
+      "Lucía Herrera (VP Product)",
+      "Paula Méndez (People Operations)"
+    ],
+    "readers": [
+      "Mariana Soto (COO)",
+      "Diego Londoño (VP Sales)",
+      "Lucía Herrera (VP Product)",
+      "Paula Méndez (People Operations)"
+    ],
+    "title": "Decision: May South Region installer rollout",
+    "statement": "Roll out the South Region installer program in May.",
+    "body": "The commercial leadership group approved the May rollout for the South Region installer program. The plan assumed field training was complete and that the installer network could support customer activation without additional escalation coverage.",
+    "premise_tags": [
+      "field_training_complete"
+    ],
+    "premises": [
+      "field_training_complete"
+    ],
+    "contradicts": [],
+    "related_decision_ids": [
+      "dec_south_region_rollout"
+    ],
+    "status": "closed"
+  },
+  {
+    "id": "dec_q4_packaging_rush",
+    "type": "decision",
+    "timestamp": "2025-10-20T14:30:00-05:00",
+    "author": "Mariana Soto (COO)",
+    "intended_audience": [
+      "Mariana Soto (COO)",
+      "Ana Restrepo (Procurement)",
+      "Camilo Torres (Quality)",
+      "Tomás Vega (CFO)",
+      "Lucía Herrera (VP Product)"
+    ],
+    "readers": [
+      "Mariana Soto (COO)",
+      "Ana Restrepo (Procurement)",
+      "Camilo Torres (Quality)",
+      "Tomás Vega (CFO)",
+      "Lucía Herrera (VP Product)"
+    ],
+    "title": "Decision: Q4 rush packaging vendor",
+    "statement": "Approve Q4 rush packaging vendor without final QA confirmation.",
+    "body": "The leadership group approved the Q4 rush packaging vendor to protect the holiday delivery schedule. The approval treated vendor quality as confirmed even though final QA validation had not been reviewed by the decision group.",
+    "premise_tags": [
+      "vendor_quality_confirmed"
+    ],
+    "premises": [
+      "vendor_quality_confirmed"
+    ],
+    "contradicts": [],
+    "related_decision_ids": [
+      "dec_q4_packaging_rush"
+    ],
+    "status": "closed"
+  },
+  {
     "id": "dec_x200_march",
     "type": "decision",
     "timestamp": "2026-02-22T15:00:00-05:00",

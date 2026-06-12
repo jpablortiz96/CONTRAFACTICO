@@ -25,14 +25,14 @@ export interface Artifact {
   premise_tags: string[];
   contradicts: string[];
   related_decision_ids: string[];
-  status?: "approved" | "pending";
+  status?: "approved" | "closed" | "pending";
 }
 
 export interface Decision extends Artifact {
   type: "decision";
   statement: string;
   premises: string[];
-  status: "approved" | "pending";
+  status: "approved" | "closed" | "pending";
 }
 
 export interface TimelineNode {
@@ -50,6 +50,30 @@ export interface BranchNode {
   timestamp: string;
   fact: boolean;
   citation_ref: string;
+}
+
+export interface ForkFingerprint {
+  pattern_name: string;
+  summary: string;
+  recurring_signature: string[];
+  decisions_analyzed: number;
+  repeated_in_decisions: string[];
+  average_readership_ratio: number;
+  total_avoidable_exposure_usd: number;
+  top_blind_spot: string;
+  evidence: Citation[];
+  recommendations: string[];
+}
+
+export interface BranchReliability {
+  score: number;
+  label: string;
+  evidence_backed_nodes: number;
+  total_nodes: number;
+  unsupported_dropped: number;
+  weakest_link: string;
+  explanation: string;
+  citations: Citation[];
 }
 
 export interface DemoAnalysis {
@@ -88,6 +112,8 @@ export interface DemoAnalysis {
     delta_usd: number;
     citations: Citation[];
   };
+  fingerprint: ForkFingerprint;
+  reliability: BranchReliability;
   citations: Citation[];
   generated_at: string;
 }

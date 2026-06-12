@@ -118,3 +118,59 @@ npm run check:foundry
 ```
 
 Return to deterministic local mode with `USE_LOCAL_CORPUS=true`.
+
+## 9. Prepare an MCP Container Apps Deployment
+
+The deployment helper is manual and is not run by repository verification.
+
+Set safe runtime values and secret process variables first:
+
+```powershell
+$env:AUTH_MODE = "dev-bearer"
+$env:DEV_BEARER_TOKEN = Read-Host "Remote smoke bearer token"
+$env:USE_LOCAL_CORPUS = "false"
+$env:DEMO_ENDPOINTS_PUBLIC = "true"
+$env:PORT = "3000"
+$env:CORS_ALLOWED_ORIGINS = "https://YOUR-WEB-ORIGIN"
+$env:SEARCH_ENDPOINT = "https://YOUR-SEARCH-SERVICE.search.windows.net"
+$env:SEARCH_KB_NAME = "contrafactico-kb"
+$env:SEARCH_API_VERSION = "2026-05-01-preview"
+$env:SEARCH_API_KEY = Read-Host "Azure AI Search API key"
+```
+
+Create or update Azure Container Apps resources and optionally build through ACR:
+
+```powershell
+.\scripts\azure\deploy-mcp-aca.ps1 `
+  -ResourceGroup "rg-contrafactico" `
+  -Location "eastus" `
+  -ContainerAppName "ca-contrafactico-mcp" `
+  -ContainerEnvName "cae-contrafactico" `
+  -AcrName "YOURUNIQUEACRNAME"
+```
+
+The script:
+
+- verifies Azure CLI login;
+- creates or reuses the resource group and Container Apps environment;
+- optionally creates ACR and builds the repository-root Docker context;
+- uses a system-assigned identity with `AcrPull` for ACR image access;
+- stores Search, development bearer, and optional AOAI keys as Container Apps secrets;
+- configures safe values as regular environment variables;
+- enables external ingress and prints only the final health, status, and MCP URLs.
+
+For an initial deployment without `AcrName`, pass a fully qualified public or already accessible registry path through `ImageName`.
+
+Use `AUTH_MODE=entra-jwt` with `ENTRA_TENANT_ID` and `ENTRA_AUDIENCE` for the production OAuth preparation path. The deployment script never prints those values.
+
+## 10. Remote Smoke Test
+
+```powershell
+$token = Read-Host "Bearer token"
+.\scripts\azure\smoke-mcp-remote.ps1 `
+  -BaseUrl "https://YOUR-CONTAINER-APP-FQDN" `
+  -BearerToken $token
+Remove-Variable token
+```
+
+The smoke helper checks `/health`, `/demo/status`, and MCP initialization. It prints status codes and minimal public metadata without printing the bearer token.

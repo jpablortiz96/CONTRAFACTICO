@@ -1,0 +1,14 @@
+node_modules
+dist
+.next
+.env
+.env.*
+.azure
+.git
+*.pem
+*.pfx
+*.key
+coverage
+playwright-report
+test-results
+*.log

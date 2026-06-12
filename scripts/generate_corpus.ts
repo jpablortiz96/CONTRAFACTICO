@@ -21,14 +21,14 @@ interface CorpusArtifact {
   premise_tags: string[];
   contradicts: string[];
   related_decision_ids: string[];
-  status?: "approved" | "pending";
+  status?: "approved" | "closed" | "pending";
 }
 
 interface CorpusDecision extends CorpusArtifact {
   type: "decision";
   statement: string;
   premises: string[];
-  status: "approved" | "pending";
+  status: "approved" | "closed" | "pending";
 }
 
 interface Company {
@@ -60,6 +60,15 @@ const vendorDecisionMakers = [
   "Camilo Torres (Quality)",
   "Tomás Vega (CFO)",
   "Lucía Herrera (VP Product)",
+];
+
+const packagingDecisionMakers = [...vendorDecisionMakers];
+
+const southRegionDecisionMakers = [
+  "Mariana Soto (COO)",
+  "Diego Londoño (VP Sales)",
+  "Lucía Herrera (VP Product)",
+  "Paula Méndez (People Operations)",
 ];
 
 const company: Company = {
@@ -121,9 +130,109 @@ const vendorSwitchDecision: CorpusDecision = {
     status: "pending",
 };
 
+const packagingRushDecision: CorpusDecision = {
+  id: "dec_q4_packaging_rush",
+  type: "decision",
+  timestamp: "2025-10-20T14:30:00-05:00",
+  author: "Mariana Soto (COO)",
+  intended_audience: packagingDecisionMakers,
+  readers: packagingDecisionMakers,
+  title: "Decision: Q4 rush packaging vendor",
+  statement:
+    "Approve Q4 rush packaging vendor without final QA confirmation.",
+  body:
+    "The leadership group approved the Q4 rush packaging vendor to protect the holiday delivery schedule. The approval treated vendor quality as confirmed even though final QA validation had not been reviewed by the decision group.",
+  premise_tags: ["vendor_quality_confirmed"],
+  premises: ["vendor_quality_confirmed"],
+  contradicts: [],
+  related_decision_ids: ["dec_q4_packaging_rush"],
+  status: "closed",
+};
+
+const southRegionRolloutDecision: CorpusDecision = {
+  id: "dec_south_region_rollout",
+  type: "decision",
+  timestamp: "2025-04-28T15:15:00-05:00",
+  author: "Diego Londoño (VP Sales)",
+  intended_audience: southRegionDecisionMakers,
+  readers: southRegionDecisionMakers,
+  title: "Decision: May South Region installer rollout",
+  statement: "Roll out the South Region installer program in May.",
+  body:
+    "The commercial leadership group approved the May rollout for the South Region installer program. The plan assumed field training was complete and that the installer network could support customer activation without additional escalation coverage.",
+  premise_tags: ["field_training_complete"],
+  premises: ["field_training_complete"],
+  contradicts: [],
+  related_decision_ids: ["dec_south_region_rollout"],
+  status: "closed",
+};
+
 const decisions: CorpusDecision[] = [
+  southRegionRolloutDecision,
+  packagingRushDecision,
   marchDecision,
   vendorSwitchDecision,
+];
+
+const historicalArtifacts: CorpusArtifact[] = [
+  {
+    id: "evt_apr22_south_training_gap",
+    type: "memo",
+    timestamp: "2025-04-22T09:10:00-05:00",
+    author: "Paula Méndez (People Operations)",
+    intended_audience: southRegionDecisionMakers,
+    readers: ["Paula Méndez (People Operations)"],
+    title: "South Region installer training readiness",
+    body:
+      "The field enablement review found that installer training completion was below the required threshold for the South Region launch. Only 11 of 18 installers had passed the final commissioning assessment, so field training was not complete for a May rollout.",
+    premise_tags: ["field_training_below_threshold"],
+    contradicts: ["field_training_complete"],
+    related_decision_ids: ["dec_south_region_rollout"],
+  },
+  southRegionRolloutDecision,
+  {
+    id: "evt_jun06_south_support_escalation",
+    type: "memo",
+    timestamp: "2025-06-06T16:20:00-05:00",
+    author: "Valentina Cruz (Customer Support)",
+    intended_audience: southRegionDecisionMakers,
+    readers: southRegionDecisionMakers,
+    title: "South Region installer support escalation",
+    body:
+      "Customer Support attributed $20,000 USD in escalation cost to repeat installer callbacks, remote commissioning assistance, and emergency field visits after the May rollout. The cost was avoidable if the training threshold had been met before activation.",
+    premise_tags: ["support_escalation_cost", "training_gap"],
+    contradicts: ["field_training_complete"],
+    related_decision_ids: ["dec_south_region_rollout"],
+  },
+  {
+    id: "evt_oct17_packaging_qa_warning",
+    type: "email",
+    timestamp: "2025-10-17T11:35:00-05:00",
+    author: "Camilo Torres (Quality)",
+    intended_audience: packagingDecisionMakers,
+    readers: ["Camilo Torres (Quality)"],
+    title: "Q4 packaging vendor final QA gap",
+    body:
+      "Quality had not completed final validation for the proposed Q4 rush packaging vendor. Seal integrity results were still open on two production samples, so vendor quality could not be confirmed before approval.",
+    premise_tags: ["packaging_qa_incomplete"],
+    contradicts: ["vendor_quality_confirmed"],
+    related_decision_ids: ["dec_q4_packaging_rush"],
+  },
+  packagingRushDecision,
+  {
+    id: "evt_nov14_packaging_rework",
+    type: "memo",
+    timestamp: "2025-11-14T17:05:00-05:00",
+    author: "Tomás Vega (CFO)",
+    intended_audience: packagingDecisionMakers,
+    readers: packagingDecisionMakers,
+    title: "Q4 packaging rework and delivery exposure",
+    body:
+      "Finance recorded $42,000 USD in avoidable packaging rework, expedited replacement materials, and delivery-delay credits after seal failures were found in the rush vendor lot. The exposure traces to production released before final QA validation.",
+    premise_tags: ["packaging_rework_cost", "delivery_delay"],
+    contradicts: ["vendor_quality_confirmed"],
+    related_decision_ids: ["dec_q4_packaging_rush"],
+  },
 ];
 
 const coreArtifacts: CorpusArtifact[] = [
@@ -666,7 +775,12 @@ ${artifact.body}
 }
 
 async function main(): Promise<void> {
-  const events = [...coreArtifacts, ...vendorArtifacts, ...decoyArtifacts].sort(
+  const events = [
+    ...historicalArtifacts,
+    ...coreArtifacts,
+    ...vendorArtifacts,
+    ...decoyArtifacts,
+  ].sort(
     (left, right) =>
       left.timestamp.localeCompare(right.timestamp) ||
       left.id.localeCompare(right.id),

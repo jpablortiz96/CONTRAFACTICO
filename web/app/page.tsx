@@ -12,9 +12,23 @@ import type {
 } from "./types";
 
 const apiBaseUrl =
-  process.env.NEXT_PUBLIC_MCP_SERVER_URL ?? "http://localhost:3000";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3100";
 const serverErrorMessage =
-  "Start the MCP server on http://localhost:3000, then run the demo again.";
+  "Start the MCP server on http://localhost:3100, then run the demo again.";
+const fingerprintEvidence = [
+  {
+    sourceId: "evt_feb14_supplier",
+    label: "X-200 supplier delay",
+  },
+  {
+    sourceId: "evt_oct17_packaging_qa_warning",
+    label: "Q4 packaging QA gap",
+  },
+  {
+    sourceId: "evt_apr22_south_training_gap",
+    label: "South Region training gap",
+  },
+] as const;
 
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -248,6 +262,113 @@ export default function HomePage() {
             selectedSourceId={source?.source_id}
             onNodeClick={(sourceId) => void openSource(sourceId)}
           />
+
+          <section
+            className="premium-insights-grid"
+            aria-label="Decision intelligence controls"
+          >
+            <article
+              className="reliability-panel glass-card"
+              data-testid="branch-reliability"
+            >
+              <div className="premium-panel-heading">
+                <div>
+                  <span className="eyebrow">Evidence contract</span>
+                  <h2>Branch Reliability</h2>
+                </div>
+                <div className="reliability-score">
+                  <strong>{analysis.reliability.score}%</strong>
+                  <span>{analysis.reliability.label}</span>
+                </div>
+              </div>
+              <div className="reliability-metrics">
+                <div>
+                  <span>Evidence-backed nodes</span>
+                  <strong>
+                    {analysis.reliability.evidence_backed_nodes}/
+                    {analysis.reliability.total_nodes}
+                  </strong>
+                </div>
+                <div>
+                  <span>Unsupported claims dropped</span>
+                  <strong>{analysis.reliability.unsupported_dropped}</strong>
+                </div>
+              </div>
+              <div className="weakest-link">
+                <span>Weakest link</span>
+                <p>{analysis.reliability.weakest_link}</p>
+              </div>
+              <p className="method-note">
+                {analysis.reliability.explanation}
+              </p>
+            </article>
+
+            <article
+              className="fingerprint-panel glass-card"
+              data-testid="fork-fingerprint"
+            >
+              <div className="fingerprint-signal" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </div>
+              <span className="eyebrow">Fork Fingerprint</span>
+              <h2>Organizational Blind Spot</h2>
+              <p className="fingerprint-main-line">
+                Invisible readiness warnings keep dying before executive
+                review.
+              </p>
+              <div className="fingerprint-metrics">
+                <span>
+                  Repeated in{" "}
+                  <strong>
+                    {analysis.fingerprint.repeated_in_decisions.length}{" "}
+                    decisions
+                  </strong>
+                </span>
+                <span>
+                  Average readership:{" "}
+                  <strong>
+                    {Math.round(
+                      analysis.fingerprint.average_readership_ratio * 100,
+                    )}
+                    %
+                  </strong>
+                </span>
+                <span>
+                  <strong>
+                    {formatUsd(
+                      analysis.fingerprint
+                        .total_avoidable_exposure_usd,
+                    )}
+                  </strong>{" "}
+                  avoidable exposure
+                </span>
+                <span>
+                  Pattern:{" "}
+                  <strong>
+                    contradicted premise + low readership + downstream cost
+                  </strong>
+                </span>
+              </div>
+              <div className="fingerprint-evidence">
+                <span>Grounded pattern evidence</span>
+                <div>
+                  {fingerprintEvidence.map((item) => (
+                    <button
+                      key={item.sourceId}
+                      type="button"
+                      className="evidence-pill"
+                      data-testid={`fingerprint-source-${item.sourceId}`}
+                      onClick={() => void openSource(item.sourceId)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </article>
+          </section>
 
           <section className="evidence-grid">
             <article className="citation-panel glass-card">
