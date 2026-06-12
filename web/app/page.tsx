@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { EnterpriseCockpit } from "./components/EnterpriseCockpit";
 import { EnterpriseMode } from "./components/EnterpriseMode";
 import { EvidenceTrust } from "./components/EvidenceTrust";
 import { TimelineTree } from "./components/TimelineTree";
 import type {
   Citation,
+  CockpitData,
   DemoAnalysis,
   DemoLiveFork,
   DemoSource,
@@ -33,7 +35,7 @@ const fingerprintEvidence = [
   },
 ] as const;
 
-type ActiveView = "rewind" | "enterprise" | "trust";
+type ActiveView = "cockpit" | "rewind" | "enterprise" | "trust";
 
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -70,7 +72,7 @@ function highlightEvidence(text: string) {
 }
 
 export default function HomePage() {
-  const [activeView, setActiveView] = useState<ActiveView>("rewind");
+  const [activeView, setActiveView] = useState<ActiveView>("cockpit");
   const [status, setStatus] = useState<DemoStatus>();
   const [analysis, setAnalysis] = useState<DemoAnalysis>();
   const [liveFork, setLiveFork] = useState<DemoLiveFork>();
@@ -83,6 +85,9 @@ export default function HomePage() {
     useState<EnterpriseData>();
   const [enterpriseLoading, setEnterpriseLoading] = useState(false);
   const [enterpriseError, setEnterpriseError] = useState<string>();
+  const [cockpitData, setCockpitData] = useState<CockpitData>();
+  const [cockpitLoading, setCockpitLoading] = useState(false);
+  const [cockpitError, setCockpitError] = useState<string>();
 
   useEffect(() => {
     let active = true;
@@ -105,7 +110,10 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (activeView === "rewind" || enterpriseData !== undefined) {
+    if (
+      (activeView !== "enterprise" && activeView !== "trust") ||
+      enterpriseData !== undefined
+    ) {
       return;
     }
 
@@ -162,6 +170,61 @@ export default function HomePage() {
       active = false;
     };
   }, [activeView, enterpriseData]);
+
+  useEffect(() => {
+    if (activeView !== "cockpit" || cockpitData !== undefined) {
+      return;
+    }
+
+    let active = true;
+    setCockpitLoading(true);
+    setCockpitError(undefined);
+
+    void Promise.all([
+      fetchJson<CockpitData["cockpit"]>("/demo/cockpit"),
+      fetchJson<CockpitData["onboarding"]>("/demo/onboarding"),
+      fetchJson<CockpitData["evidenceGraph"]>(
+        "/demo/evidence-graph",
+      ),
+      fetchJson<CockpitData["deployment"]>(
+        "/demo/deployment-footprint",
+      ),
+      fetchJson<CockpitData["channels"]>("/demo/channels"),
+    ])
+      .then(
+        ([
+          cockpit,
+          onboarding,
+          evidenceGraph,
+          deployment,
+          channels,
+        ]) => {
+          if (active) {
+            setCockpitData({
+              cockpit,
+              onboarding,
+              evidenceGraph,
+              deployment,
+              channels,
+            });
+          }
+        },
+      )
+      .catch(() => {
+        if (active) {
+          setCockpitError(serverErrorMessage);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setCockpitLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeView, cockpitData]);
 
   const citationBySource = useMemo(
     () =>
@@ -224,11 +287,15 @@ export default function HomePage() {
     activeCitation.source_id.trim().length > 0 &&
     activeCitation.span.trim().length === 0;
   const heroKicker =
-    activeView === "rewind"
+    activeView === "cockpit"
+      ? "Enterprise Decision Intelligence Platform"
+      : activeView === "rewind"
       ? "The Org That Didn't Happen"
       : "Enterprise Decision Intelligence Platform";
   const heroCopy =
-    activeView === "rewind"
+    activeView === "cockpit"
+      ? "A command center for decision risk, evidence flow, organizational blind spots, governance, and enterprise adoption."
+      : activeView === "rewind"
       ? "Reconstruct the moment a critical fact disappeared, then follow the branch the organization never took."
       : activeView === "enterprise"
         ? "Onboard evidence, register decisions, enforce human governance, and retain an auditable record of every grounded analysis."
@@ -273,11 +340,20 @@ export default function HomePage() {
       <nav className="product-nav" aria-label="Product views">
         <button
           type="button"
+          className={activeView === "cockpit" ? "active" : ""}
+          data-testid="nav-cockpit"
+          onClick={() => setActiveView("cockpit")}
+        >
+          <span>01</span>
+          Enterprise Cockpit
+        </button>
+        <button
+          type="button"
           className={activeView === "rewind" ? "active" : ""}
           data-testid="nav-rewind"
           onClick={() => setActiveView("rewind")}
         >
-          <span>01</span>
+          <span>02</span>
           Rewind Demo
         </button>
         <button
@@ -286,7 +362,7 @@ export default function HomePage() {
           data-testid="nav-enterprise"
           onClick={() => setActiveView("enterprise")}
         >
-          <span>02</span>
+          <span>03</span>
           Enterprise Mode
         </button>
         <button
@@ -295,10 +371,33 @@ export default function HomePage() {
           data-testid="nav-trust"
           onClick={() => setActiveView("trust")}
         >
-          <span>03</span>
+          <span>04</span>
           Evidence &amp; Trust
         </button>
       </nav>
+
+      {activeView === "cockpit" && cockpitLoading ? (
+        <section
+          className="loading-scene enterprise-loading"
+          aria-label="Loading enterprise cockpit"
+        >
+          <div className="loading-line" />
+          <p>Loading enterprise cockpit...</p>
+        </section>
+      ) : null}
+
+      {activeView === "cockpit" && cockpitError !== undefined ? (
+        <div className="error-card" role="alert" data-testid="cockpit-error">
+          <strong>Enterprise cockpit unavailable</strong>
+          <span>{cockpitError}</span>
+        </div>
+      ) : null}
+
+      {activeView === "cockpit" &&
+      cockpitData !== undefined &&
+      !cockpitLoading ? (
+        <EnterpriseCockpit data={cockpitData} />
+      ) : null}
 
       {activeView === "rewind" ? (
         <>
@@ -595,7 +694,8 @@ export default function HomePage() {
         </>
       ) : null}
 
-      {activeView !== "rewind" && enterpriseLoading ? (
+      {(activeView === "enterprise" || activeView === "trust") &&
+      enterpriseLoading ? (
         <section
           className="loading-scene enterprise-loading"
           aria-label="Loading enterprise contracts"
@@ -605,7 +705,8 @@ export default function HomePage() {
         </section>
       ) : null}
 
-      {activeView !== "rewind" && enterpriseError !== undefined ? (
+      {(activeView === "enterprise" || activeView === "trust") &&
+      enterpriseError !== undefined ? (
         <div
           className="error-card"
           role="alert"
@@ -632,7 +733,7 @@ export default function HomePage() {
         <span>CONTRAFÁCTICO</span>
         <span>
           {activeView !== "rewind"
-            ? "Enterprise contracts are local and synthetic; production deployment remains explicit."
+            ? "Synthetic company data; tenant-ready architecture with explicit production controls."
             : status?.evidence_mode === "foundry"
             ? "Every claim grounded through Foundry IQ."
             : "Every claim grounded in the Cordillera Components corpus."}

@@ -94,7 +94,10 @@ export function EnterpriseMode({ data }: EnterpriseModeProps) {
         <div className="readiness-dial">
           <strong>{data.readiness.readiness_score}%</strong>
           <span>Implementation readiness</span>
-          <small>Deployment and tenant configuration remain pending.</small>
+          <small>
+            Runtime and Copilot connection are live; tenant production
+            controls remain.
+          </small>
         </div>
       </section>
 

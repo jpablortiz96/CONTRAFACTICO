@@ -179,7 +179,7 @@ button {
 
 .product-nav {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin: 0 0 24px;
   padding: 8px;
@@ -956,6 +956,485 @@ mark {
   animation: enterprise-reveal 260ms ease-out;
 }
 
+.cockpit-view {
+  display: grid;
+  gap: 14px;
+  animation: enterprise-reveal 260ms ease-out;
+}
+
+.cockpit-command {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+  gap: 42px;
+  align-items: center;
+  padding: 38px;
+  border-radius: 24px;
+  border-color: rgba(142, 233, 255, 0.22);
+  background:
+    radial-gradient(circle at 92% 10%, rgba(142, 233, 255, 0.11), transparent 34%),
+    radial-gradient(circle at 75% 80%, rgba(120, 245, 214, 0.08), transparent 30%),
+    linear-gradient(135deg, rgba(13, 35, 47, 0.96), rgba(6, 16, 24, 0.82));
+}
+
+.cockpit-command h2,
+.cockpit-section-heading h2,
+.adoption-story h2,
+.cockpit-footprint h2 {
+  margin: 9px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(30px, 3.5vw, 54px);
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.cockpit-command p {
+  max-width: 760px;
+  margin: 24px 0 0;
+  color: #a5b9c2;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.cockpit-command-badges {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.cockpit-command-badges span {
+  display: flex;
+  min-height: 66px;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid rgba(120, 245, 214, 0.14);
+  border-radius: 13px;
+  color: #a8d8cc;
+  background: rgba(120, 245, 214, 0.04);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+.cockpit-command-badges .cockpit-mode-badge {
+  grid-column: 1 / -1;
+  border-color: rgba(255, 187, 92, 0.24);
+  color: #f0c987;
+  background: rgba(255, 187, 92, 0.055);
+}
+
+.cockpit-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cockpit-kpi {
+  min-height: 160px;
+  padding: 22px;
+  border-radius: 18px;
+}
+
+.cockpit-kpi > span {
+  color: #718892;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.cockpit-kpi strong {
+  display: block;
+  margin-top: 25px;
+  color: #e5f2f5;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(34px, 3vw, 50px);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.cockpit-kpi small {
+  display: block;
+  margin-top: 12px;
+  color: #71868f;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.cockpit-kpi.exposure strong,
+.cockpit-kpi.reliability strong {
+  color: var(--mint);
+}
+
+.cockpit-kpi.alert {
+  border-color: rgba(255, 128, 111, 0.24);
+}
+
+.cockpit-kpi.alert strong {
+  color: #ff9e91;
+}
+
+.cockpit-section,
+.evidence-graph-panel,
+.adoption-story,
+.cockpit-footprint {
+  padding: 32px;
+  border-radius: 22px;
+}
+
+.cockpit-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.cockpit-section-heading > p {
+  max-width: 450px;
+  margin: 0;
+  color: #80959e;
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: right;
+}
+
+.cockpit-section-note {
+  padding: 8px 11px;
+  border: 1px solid rgba(142, 233, 255, 0.16);
+  border-radius: 999px;
+  color: #8ebac5;
+  background: rgba(142, 233, 255, 0.04);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.onboarding-wizard {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 28px;
+}
+
+.onboarding-wizard article {
+  min-height: 210px;
+  padding: 17px;
+  border: 1px solid rgba(174, 210, 226, 0.1);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(142, 233, 255, 0.04), rgba(2, 9, 13, 0.26));
+}
+
+.onboarding-wizard article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.onboarding-wizard article > div > span {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+}
+
+.onboarding-wizard article i {
+  font-style: normal;
+}
+
+.onboarding-wizard h3,
+.cockpit-connector h3,
+.channel-card h3,
+.graph-inspector h3,
+.footprint-grid h3 {
+  margin: 25px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.onboarding-wizard p,
+.cockpit-connector p,
+.channel-card p,
+.graph-inspector p,
+.footprint-grid p {
+  margin: 14px 0 0;
+  color: #82969f;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.cockpit-connector-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.cockpit-connector {
+  min-height: 230px;
+  padding: 21px;
+  border-radius: 16px;
+}
+
+.cockpit-connector small {
+  display: block;
+  margin-top: 20px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(174, 210, 226, 0.07);
+  color: #6e858f;
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.status-production_pending {
+  border-color: rgba(255, 128, 111, 0.22);
+  color: #ff9e91;
+  background: rgba(255, 128, 111, 0.05);
+}
+
+.evidence-graph-panel {
+  border-color: rgba(142, 233, 255, 0.18);
+  background:
+    radial-gradient(circle at 70% 20%, rgba(142, 233, 255, 0.07), transparent 32%),
+    linear-gradient(145deg, rgba(8, 23, 33, 0.92), rgba(3, 11, 17, 0.86));
+}
+
+.evidence-graph-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
+  gap: 18px;
+  margin-top: 26px;
+}
+
+.evidence-graph-layout svg {
+  width: 100%;
+  min-height: 480px;
+  border: 1px solid rgba(174, 210, 226, 0.08);
+  border-radius: 17px;
+  background:
+    linear-gradient(rgba(4, 13, 19, 0.76), rgba(4, 13, 19, 0.88)),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 49px,
+      rgba(142, 233, 255, 0.025) 50px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 49px,
+      rgba(142, 233, 255, 0.025) 50px
+    );
+}
+
+.evidence-graph-layout line {
+  stroke: rgba(142, 233, 255, 0.25);
+  stroke-width: 1.2;
+}
+
+.evidence-graph-layout marker path {
+  fill: rgba(142, 233, 255, 0.5);
+}
+
+.edge-label {
+  fill: #56717c;
+  font-family: "Courier New", monospace;
+  font-size: 7px;
+  text-anchor: middle;
+}
+
+.evidence-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.evidence-node circle {
+  fill: #102c39;
+  stroke: rgba(142, 233, 255, 0.42);
+  stroke-width: 1.5;
+  transition:
+    fill 160ms ease,
+    stroke 160ms ease,
+    filter 160ms ease;
+}
+
+.evidence-node text {
+  fill: #a8bac1;
+  font-family: "Courier New", monospace;
+  font-size: 7px;
+  text-anchor: middle;
+}
+
+.evidence-node:hover circle,
+.evidence-node:focus circle,
+.evidence-node.selected circle {
+  fill: #174456;
+  stroke: var(--cyan);
+  filter: drop-shadow(0 0 8px rgba(142, 233, 255, 0.45));
+}
+
+.evidence-node.node-evidence circle {
+  fill: #4a3419;
+  stroke: rgba(255, 187, 92, 0.72);
+}
+
+.evidence-node.node-cost circle,
+.evidence-node.node-policy circle {
+  fill: #472327;
+  stroke: rgba(255, 128, 111, 0.7);
+}
+
+.evidence-node.node-connector circle {
+  fill: #123d36;
+  stroke: rgba(120, 245, 214, 0.62);
+}
+
+.graph-inspector {
+  min-height: 480px;
+  padding: 26px;
+  border: 1px solid rgba(174, 210, 226, 0.1);
+  border-radius: 17px;
+  background: rgba(2, 9, 13, 0.62);
+}
+
+.graph-inspector code {
+  display: block;
+  margin-top: 10px;
+}
+
+.graph-inspector > div {
+  margin-top: 28px;
+  padding: 16px;
+  border: 1px solid rgba(142, 233, 255, 0.13);
+  border-radius: 12px;
+  background: rgba(142, 233, 255, 0.035);
+}
+
+.graph-inspector > div span,
+.adoption-story-columns > div > span {
+  display: block;
+  color: #657d87;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.graph-inspector > div strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+}
+
+.graph-inspector > small {
+  display: block;
+  margin-top: 28px;
+  color: var(--mint);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.channel-matrix {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.channel-card {
+  min-height: 220px;
+  padding: 21px;
+  border-radius: 16px;
+}
+
+.adoption-story {
+  display: grid;
+  gap: 28px;
+  border-color: rgba(255, 187, 92, 0.18);
+  background:
+    radial-gradient(circle at 90% 10%, rgba(255, 187, 92, 0.08), transparent 32%),
+    linear-gradient(145deg, rgba(29, 23, 17, 0.86), rgba(7, 18, 26, 0.8));
+}
+
+.adoption-story > p {
+  max-width: 1050px;
+  margin: 0;
+  color: #c1b49e;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(18px, 2vw, 27px);
+  line-height: 1.5;
+}
+
+.adoption-story-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.adoption-story-columns > div {
+  padding: 20px;
+  border: 1px solid rgba(255, 187, 92, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 187, 92, 0.025);
+}
+
+.adoption-story-columns ul {
+  display: grid;
+  gap: 9px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adoption-story-columns li {
+  color: #968b7b;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.adoption-story-columns li::before {
+  margin-right: 8px;
+  color: var(--amber);
+  content: "+";
+}
+
+.cockpit-footprint {
+  display: grid;
+  gap: 28px;
+}
+
+.footprint-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.footprint-grid article {
+  min-height: 265px;
+  padding: 18px;
+  border: 1px solid rgba(174, 210, 226, 0.09);
+  border-radius: 14px;
+  background: rgba(142, 233, 255, 0.025);
+}
+
+.footprint-grid small {
+  display: block;
+  margin-top: 18px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(174, 210, 226, 0.07);
+  color: #647a84;
+  font-size: 8px;
+  line-height: 1.55;
+}
+
 @keyframes enterprise-reveal {
   from {
     opacity: 0;
@@ -1670,6 +2149,7 @@ footer {
   }
 
   .enterprise-overview,
+  .cockpit-command,
   .governance-grid,
   .trust-detail-grid {
     grid-template-columns: 1fr;
@@ -1682,6 +2162,27 @@ footer {
   }
 
   .adoption-flow {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .cockpit-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .onboarding-wizard,
+  .cockpit-connector-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .evidence-graph-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .channel-matrix {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .footprint-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 
@@ -1772,6 +2273,11 @@ footer {
   }
 
   .enterprise-overview,
+  .cockpit-command,
+  .cockpit-section,
+  .evidence-graph-panel,
+  .adoption-story,
+  .cockpit-footprint,
   .adoption-panel,
   .enterprise-section,
   .governance-card,
@@ -1790,11 +2296,38 @@ footer {
   }
 
   .adoption-flow,
+  .cockpit-kpis,
+  .onboarding-wizard,
+  .cockpit-connector-grid,
+  .channel-matrix,
+  .adoption-story-columns,
+  .footprint-grid,
   .connector-grid,
   .trust-stack-grid,
   .readiness-columns,
   .next-step-grid {
     grid-template-columns: 1fr;
+  }
+
+  .cockpit-command-badges {
+    grid-template-columns: 1fr;
+  }
+
+  .cockpit-command-badges .cockpit-mode-badge {
+    grid-column: auto;
+  }
+
+  .cockpit-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cockpit-section-heading > p {
+    text-align: left;
+  }
+
+  .evidence-graph-layout svg {
+    min-height: 390px;
   }
 
   .trust-module-row {

@@ -11,6 +11,7 @@ import {
   evaluateGovernancePolicyCore,
   getEnterpriseReadinessCore,
 } from "./services/enterprise.js";
+import { getEnterpriseOnboardingCore } from "./services/onboarding.js";
 
 const DecisionInputSchema = z
   .object({
@@ -74,11 +75,22 @@ const DecisionGovernanceOutputSchema = z
   })
   .strict();
 
+const EnterpriseAdoptionOutputSchema = z
+  .object({
+    adoption_summary: z.string().min(1),
+    required_data_sources: z.array(z.string().min(1)),
+    supported_channels: z.array(z.string().min(1)),
+    production_requirements: z.array(z.string().min(1)),
+    demo_limitations: z.array(z.string().min(1)),
+  })
+  .strict();
+
 export const copilotToolNames = [
   "rewind_decision_summary",
   "detect_live_fork",
   "analyze_enterprise_readiness",
   "evaluate_decision_governance",
+  "explain_enterprise_adoption",
 ] as const;
 
 export function createCopilotMcpServer(): McpServer {
@@ -218,6 +230,41 @@ export function createCopilotMcpServer(): McpServer {
             text: structuredContent.blocked_recommendation
               ? `${decision_id} requires human approval before the recommendation proceeds.`
               : `${decision_id} does not trigger the configured governance policy.`,
+          },
+        ],
+        structuredContent,
+      };
+    },
+  );
+
+  server.registerTool(
+    "explain_enterprise_adoption",
+    {
+      title: "Explain Enterprise Adoption",
+      description:
+        "Explains how a real company would onboard CONTRAFACTICO, what data it connects, what channels it supports, and what remains before production.",
+      inputSchema: EmptyInputSchema,
+      outputSchema: EnterpriseAdoptionOutputSchema,
+    },
+    async () => {
+      const onboarding = getEnterpriseOnboardingCore();
+      const structuredContent = EnterpriseAdoptionOutputSchema.parse({
+        adoption_summary: onboarding.headline,
+        required_data_sources: onboarding.evidence_sources.map(
+          (source) => source.name,
+        ),
+        supported_channels: onboarding.supported_channels.map(
+          (channel) => channel.name,
+        ),
+        production_requirements: onboarding.production_requirements,
+        demo_limitations: onboarding.demo_limitations,
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: structuredContent.adoption_summary,
           },
         ],
         structuredContent,

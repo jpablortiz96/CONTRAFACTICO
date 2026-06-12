@@ -263,3 +263,138 @@ export interface EnterpriseData {
   trustStack: TrustStackModule[];
   policyEvaluation: GovernancePolicyEvaluation;
 }
+
+export type EnterpriseImplementationStatus =
+  | "implemented"
+  | "adapter_contract"
+  | "documented_path"
+  | "production_pending";
+
+export interface EnterpriseCockpitData {
+  organization_name: string;
+  mode: "synthetic-demo" | "tenant-ready";
+  decisions_analyzed: number;
+  open_live_forks: number;
+  governance_blocks: number;
+  total_avoidable_exposure_usd: number;
+  average_branch_reliability: number;
+  top_blind_spot: string;
+  risk_by_business_unit: Array<{
+    business_unit: string;
+    decisions: number;
+    open_live_forks: number;
+    governance_blocks: number;
+    exposure_usd: number;
+    risk_level: DecisionRiskLevel;
+  }>;
+  recent_agent_runs: Array<{
+    run_id: string;
+    tool_name: string;
+    decision_id?: string;
+    result_summary: string;
+    evidence_count: number;
+    status: "completed";
+  }>;
+  recommended_next_actions: string[];
+}
+
+export interface ConnectorReadiness {
+  connector_id: string;
+  name: string;
+  status: EnterpriseImplementationStatus;
+  summary: string;
+  data_contract: string[];
+}
+
+export interface DeploymentFootprint {
+  architecture_mode: "tenant-ready";
+  runtime: string;
+  grounding: string;
+  agent_channel: string;
+  web_experience: string;
+  components: Array<{
+    component_id: string;
+    name: string;
+    status: EnterpriseImplementationStatus;
+    current_state: string;
+    production_requirement: string;
+  }>;
+  connector_readiness: ConnectorReadiness[];
+}
+
+export interface SupportedChannel {
+  channel_id: string;
+  name: string;
+  status: EnterpriseImplementationStatus;
+  usage: string;
+}
+
+export interface EnterpriseOnboardingData {
+  headline: string;
+  adoption_stages: Array<{
+    stage_id: string;
+    title: string;
+    summary: string;
+    status: EnterpriseImplementationStatus;
+  }>;
+  supported_channels: SupportedChannel[];
+  evidence_sources: Array<{
+    source_id: string;
+    name: string;
+    examples: string[];
+    status: EnterpriseImplementationStatus;
+  }>;
+  required_customer_inputs: string[];
+  generated_outputs: string[];
+  production_requirements: string[];
+  demo_limitations: string[];
+}
+
+export type EvidenceGraphNodeType =
+  | "decision"
+  | "premise"
+  | "evidence"
+  | "person_role"
+  | "outcome"
+  | "cost"
+  | "policy"
+  | "connector";
+
+export interface EvidenceGraphNode {
+  id: string;
+  label: string;
+  type: EvidenceGraphNodeType;
+  detail: string;
+  source_id?: string;
+}
+
+export interface EvidenceGraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  relation:
+    | "rests_on"
+    | "contradicts"
+    | "read_by"
+    | "missed_by"
+    | "caused"
+    | "priced_by"
+    | "blocked_by"
+    | "grounded_in"
+    | "imported_from";
+}
+
+export interface DecisionNetworkData {
+  decision_id: string;
+  title: string;
+  nodes: EvidenceGraphNode[];
+  edges: EvidenceGraphEdge[];
+}
+
+export interface CockpitData {
+  cockpit: EnterpriseCockpitData;
+  onboarding: EnterpriseOnboardingData;
+  evidenceGraph: DecisionNetworkData;
+  deployment: DeploymentFootprint;
+  channels: SupportedChannel[];
+}

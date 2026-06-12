@@ -61,15 +61,15 @@ export function EvidenceTrust({ data }: EvidenceTrustProps) {
             <span className="eyebrow">Target deployment topology</span>
             <h2>Production Architecture</h2>
           </div>
-          <span className="enterprise-badge status-planned">
-            Deployment pending
+          <span className="enterprise-badge status-implemented">
+            Runtime implemented
           </span>
         </div>
         <p className="architecture-disclosure">
-          This is the documented production path. The local repository
-          implements the MCP server, auth validation, grounding adapter, and
-          contracts; tenant deployment and connector configuration are not
-          complete.
+          The MCP runtime, Foundry grounding, web experience, and Copilot
+          facade are implemented. Production Entra OAuth, Key Vault
+          references, real tenant connectors, telemetry, and customer data
+          governance remain explicit deployment work.
         </p>
         <div className="architecture-flow">
           {architectureLayers.map((layer, index) => (

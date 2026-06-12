@@ -1,7 +1,8 @@
 # CONTRAFACTICO Web Demo
 
-The browser application includes three product views:
+The browser application includes four product views:
 
+- **Enterprise Cockpit** is the default command center with KPI cards, onboarding wizard, connector wall, clickable X-200 evidence graph, channel matrix, adoption story, and deployment footprint.
 - **Rewind Demo** visualizes the X-200 evidence trail, counterfactual branch, avoidable gap, Live Fork alert, Fork Fingerprint, and Branch Reliability Score.
 - **Enterprise Mode** shows adoption flow, Decision Registry, ingestion connectors, governance policy, audit runs, and the Open Source Trust Stack.
 - **Evidence & Trust** shows the target production architecture, implemented-versus-pending boundary, tenant prerequisites, and integration evidence.
@@ -34,7 +35,17 @@ npm install
 npm run dev -- -p 3001
 ```
 
-Open `http://localhost:3001` and select **Run Rewind**.
+Open `http://localhost:3001`. The Enterprise Cockpit loads first; select **Rewind Demo** and then **Run Rewind** for the original experience.
+
+The cockpit consumes:
+
+- `/demo/cockpit`
+- `/demo/onboarding`
+- `/demo/evidence-graph`
+- `/demo/deployment-footprint`
+- `/demo/channels`
+
+The evidence graph is a deterministic, clickable visualization of the X-200 decision, supplier premise, unread contradiction, outcome, $80,000 cost, governance policy, and Foundry IQ grounding path.
 
 The result view keeps the core timeline flow intact and adds:
 
@@ -51,7 +62,7 @@ Select **Enterprise Mode** to load working local contracts from:
 - `/demo/trust-stack`
 - `/demo/policy-evaluation/dec_x200_march`
 
-The connector and trust cards state whether each path is ready, an adapter contract, or only documented. The architecture view is explicitly labeled as a target deployment with production work pending.
+Connector and channel cards state whether each path is implemented, an adapter contract, a documented path, or production pending. All Cordillera Components data is synthetic. Runtime and Copilot connectivity are implemented; production OAuth, Key Vault references, real tenant connectors, telemetry, and customer data governance remain pending.
 
 ## Cloud API
 

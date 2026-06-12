@@ -14,11 +14,16 @@ import { config, serviceMetadata } from "./constants.js";
 import { registeredToolNames } from "./mcpServer.js";
 import { createAuthMiddleware } from "./services/auth.js";
 import {
+  getDeploymentFootprintCore,
+  getEnterpriseCockpitCore,
+} from "./services/cockpit.js";
+import {
   getDemoAnalysis,
   getDemoLiveFork,
   getDemoSource,
 } from "./services/demo.js";
 import { getDemoStatus } from "./services/evidenceStatus.js";
+import { getDecisionNetworkCore } from "./services/evidenceGraph.js";
 import { safeStartupSummary } from "./services/config.js";
 import {
   evaluateGovernancePolicyCore,
@@ -31,6 +36,10 @@ import {
 } from "./services/enterprise.js";
 import { analyzeForkFingerprintCore } from "./services/fingerprint.js";
 import { McpHttpTransportManager } from "./services/mcpHttp.js";
+import {
+  getEnterpriseOnboardingCore,
+  getSupportedChannelsCore,
+} from "./services/onboarding.js";
 import { scoreBranchReliabilityCore } from "./services/reliability.js";
 
 const MCP_ACCEPT_HEADER = "application/json, text/event-stream";
@@ -139,6 +148,51 @@ app.get("/health", (_request: Request, response: Response) => {
 app.get("/demo/status", (_request: Request, response: Response) => {
   response.status(200).json(getDemoStatus(config));
 });
+
+app.get(
+  "/demo/cockpit",
+  demoAuthMiddleware,
+  async (_request: Request, response: Response) => {
+    try {
+      response.status(200).json(await getEnterpriseCockpitCore());
+    } catch (error: unknown) {
+      console.error("Demo cockpit request failed.", error);
+      response.status(500).json({ error: "Demo cockpit failed." });
+    }
+  },
+);
+
+app.get(
+  "/demo/onboarding",
+  demoAuthMiddleware,
+  (_request: Request, response: Response) => {
+    response.status(200).json(getEnterpriseOnboardingCore());
+  },
+);
+
+app.get(
+  "/demo/evidence-graph",
+  demoAuthMiddleware,
+  (_request: Request, response: Response) => {
+    response.status(200).json(getDecisionNetworkCore());
+  },
+);
+
+app.get(
+  "/demo/deployment-footprint",
+  demoAuthMiddleware,
+  (_request: Request, response: Response) => {
+    response.status(200).json(getDeploymentFootprintCore());
+  },
+);
+
+app.get(
+  "/demo/channels",
+  demoAuthMiddleware,
+  (_request: Request, response: Response) => {
+    response.status(200).json(getSupportedChannelsCore());
+  },
+);
 
 app.get(
   "/demo/analysis/dec_x200_march",

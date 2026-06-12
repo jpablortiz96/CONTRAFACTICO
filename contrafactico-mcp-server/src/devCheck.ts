@@ -27,7 +27,13 @@ import {
   readMcpConnectorTestGetOk,
   readMcpTransportMode,
 } from "./services/config.js";
+import {
+  getConnectorReadinessCore,
+  getDeploymentFootprintCore,
+  getEnterpriseCockpitCore,
+} from "./services/cockpit.js";
 import { getDemoStatus } from "./services/evidenceStatus.js";
+import { getDecisionNetworkCore } from "./services/evidenceGraph.js";
 import {
   evaluateGovernancePolicyCore,
   getAuditRunsCore,
@@ -47,6 +53,10 @@ import {
   retrieveLocalGrounded,
 } from "./services/localCorpus.js";
 import { retrieveGrounded } from "./services/foundryIq.js";
+import {
+  getEnterpriseOnboardingCore,
+  getSupportedChannelsCore,
+} from "./services/onboarding.js";
 import { scoreBranchReliabilityCore } from "./services/reliability.js";
 
 interface CheckResult {
@@ -142,6 +152,7 @@ function copilotArgumentsForTool(
     case "detect_live_fork":
       return { pending_decision_id: "dec_vendor_switch" };
     case "analyze_enterprise_readiness":
+    case "explain_enterprise_adoption":
       return {};
   }
 }
@@ -569,11 +580,15 @@ async function main(): Promise<void> {
   );
 
   const readiness = getEnterpriseReadinessCore();
-  assert.ok(
-    readiness.readiness_score >= 78 &&
-      readiness.readiness_score <= 84,
-  );
+  assert.equal(readiness.readiness_score, 88);
   assert.equal(readiness.production_gaps.length, 5);
+  assert.deepEqual(readiness.production_gaps, [
+    "Production Entra OAuth for Copilot connector",
+    "Azure Key Vault secret references",
+    "Real tenant connector configuration",
+    "Production telemetry backend",
+    "Customer data governance and retention policy",
+  ]);
   assert.ok(
     readiness.implemented_capabilities.includes("Foundry IQ grounding"),
   );
@@ -581,6 +596,94 @@ async function main(): Promise<void> {
   record(
     "enterprise_readiness",
     `${readiness.readiness_score}% readiness with ${readiness.production_gaps.length} explicit production gaps`,
+  );
+
+  const cockpit = await getEnterpriseCockpitCore();
+  assert.equal(cockpit.organization_name, "Cordillera Components");
+  assert.equal(cockpit.mode, "synthetic-demo");
+  assert.equal(cockpit.decisions_analyzed, 4);
+  assert.equal(cockpit.open_live_forks, 1);
+  assert.ok(cockpit.governance_blocks >= 2);
+  assert.equal(cockpit.total_avoidable_exposure_usd, 142_000);
+  assert.equal(cockpit.average_branch_reliability, 92);
+  assert.equal(
+    cockpit.top_blind_spot,
+    "Critical readiness warnings with low executive readership",
+  );
+  assert.ok(cockpit.risk_by_business_unit.length >= 4);
+  assert.ok(cockpit.recent_agent_runs.length >= 3);
+  record(
+    "enterprise_cockpit",
+    `${cockpit.decisions_analyzed} decisions, ${cockpit.open_live_forks} live fork, ${cockpit.governance_blocks} governance blocks`,
+  );
+
+  const onboarding = getEnterpriseOnboardingCore();
+  assert.equal(onboarding.adoption_stages.length, 6);
+  assert.equal(onboarding.supported_channels.length, 8);
+  assert.equal(onboarding.production_requirements.length, 5);
+  assert.ok(
+    onboarding.demo_limitations.some((limitation) =>
+      limitation.includes("synthetic"),
+    ),
+  );
+  assert.equal(getSupportedChannelsCore().length, 8);
+  record(
+    "enterprise_onboarding",
+    `${onboarding.adoption_stages.length} stages and ${onboarding.supported_channels.length} supported channel paths`,
+  );
+
+  const connectorReadiness = getConnectorReadinessCore();
+  assert.equal(connectorReadiness.length, 9);
+  assert.ok(
+    connectorReadiness.some(
+      (connector) =>
+        connector.name === "Azure Blob / Foundry IQ" &&
+        connector.status === "implemented",
+    ),
+  );
+  const deployment = getDeploymentFootprintCore();
+  assert.equal(deployment.architecture_mode, "tenant-ready");
+  assert.equal(deployment.connector_readiness.length, 9);
+  assert.ok(
+    deployment.components.some(
+      (component) =>
+        component.name === "Azure Container Apps MCP Server" &&
+        component.status === "implemented",
+    ),
+  );
+  record(
+    "deployment_footprint",
+    `${deployment.components.length} components and ${deployment.connector_readiness.length} connector paths`,
+  );
+
+  const decisionNetwork = getDecisionNetworkCore();
+  const nodeIds = new Set(decisionNetwork.nodes.map((node) => node.id));
+  for (const requiredNode of [
+    "dec_x200_march",
+    "supplier_on_time",
+    "evt_feb14_supplier",
+    "role_x200_decision_makers",
+    "evt_mar31_returns",
+    "cost_x200_80000",
+    "policy_low_readership",
+    "connector_foundry_iq",
+  ]) {
+    assert.ok(
+      nodeIds.has(requiredNode),
+      `Evidence graph node missing: ${requiredNode}`,
+    );
+  }
+  assert.ok(
+    decisionNetwork.edges.some(
+      (edge) => edge.relation === "contradicts",
+    ),
+  );
+  assert.ok(
+    decisionNetwork.edges.some((edge) => edge.relation === "blocked_by"),
+  );
+  record(
+    "evidence_graph",
+    `${decisionNetwork.nodes.length} nodes and ${decisionNetwork.edges.length} grounded relationships`,
   );
 
   const retrieval = await retrieveLocalGrounded(

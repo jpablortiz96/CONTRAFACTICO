@@ -20,7 +20,7 @@ CONTRAFÁCTICO is an enterprise agent for examining consequential organizational
 
 ## Status
 
-The repository supports local evidence mode, opt-in Foundry IQ retrieval, a ten-tool technical MCP endpoint, a four-tool Copilot Studio facade, stateless and stateful Streamable HTTP modes, a visual decision rewind, and working enterprise product contracts. Azure deployment and tenant connector configuration remain explicit operator actions.
+The repository supports local evidence mode, opt-in Foundry IQ retrieval, a ten-tool technical MCP endpoint, a five-tool Copilot Studio facade, stateless and stateful Streamable HTTP modes, an Enterprise Cockpit, a visual decision rewind, and working enterprise product contracts. Tenant connector configuration and production controls remain explicit operator actions.
 
 ## Enterprise Product Vision
 
@@ -37,14 +37,70 @@ The productization layer separates six concerns:
 
 ## How A Company Would Use It
 
-1. Connect tenant-approved evidence exports or corpus files.
-2. Normalize consequential decisions into the Decision Registry.
-3. Rewind failed or disputed decisions through cited evidence.
-4. Detect repeated organizational blind spots with Fork Fingerprint.
-5. Evaluate high-risk recommendations against governance policies.
-6. Retain citations, unsupported-claim counts, and reliability in Audit Run records.
+1. Inventory tenant-approved evidence sources, owners, access controls, and retention requirements.
+2. Normalize documents, messages, meetings, decisions, readership, outcomes, and costs into the artifact contract.
+3. Build a Decision Registry with owners, premises, evidence sources, risk, lifecycle status, and outcomes.
+4. Ground retrieval through the tenant Foundry IQ knowledge base.
+5. Rewind failed decisions, detect live forks, and evaluate repeated organizational blind spots.
+6. Enforce deterministic governance and retain citations, reliability, and Audit Run records.
 
 The repository uses only synthetic Cordillera Components data.
+
+## Enterprise Cockpit
+
+The web application opens with a Decision Intelligence Cockpit containing:
+
+- four analyzed decisions,
+- $142,000 USD in avoidable exposure,
+- one open live fork,
+- two or more governance blocks,
+- 92% average branch reliability,
+- a six-stage onboarding wizard,
+- nine connector readiness cards,
+- a clickable X-200 evidence graph,
+- channel and deployment matrices.
+
+The original decision rewind remains available as a top-level view.
+
+## Supported Channels
+
+- Microsoft 365 Copilot / Teams: implemented through the connected Copilot Studio agent.
+- Copilot Studio: implemented through the simplified MCP facade.
+- Web War Room: implemented.
+- REST/MCP API: implemented.
+- Power Automate: connector contract.
+- Power BI / Fabric: documented dashboard path.
+- Custom internal portals: adapter contract.
+- Slack, Jira, and ServiceNow: future tenant adapters.
+
+## Data Onboarding Contract
+
+A customer supplies an approved evidence-source inventory, decision identifiers, owners, premises, timestamps, readership metadata where permitted, outcomes, cost records, and governance requirements. CONTRAFÁCTICO generates a Decision Registry, grounded rewinds, counterfactual branches, Live Fork alerts, governance evaluations, audit runs, reliability scores, and evidence-graph exports.
+
+## Demo Vs Production
+
+Implemented:
+
+- Azure Container Apps MCP runtime,
+- Foundry IQ grounding,
+- Copilot Studio and Power Platform MCP facade,
+- Enterprise Cockpit and Web War Room,
+- deterministic registry, governance, audit, reliability, and evidence graph contracts.
+
+Synthetic or demonstration-only:
+
+- Cordillera Components data,
+- public Copilot connector mode,
+- deterministic X-200 evidence graph,
+- local connector simulations.
+
+Current production gaps:
+
+- Production Entra OAuth for the Copilot connector,
+- Azure Key Vault secret references,
+- real tenant connector configuration,
+- production telemetry backend,
+- customer data governance and retention policy.
 
 ## Decision Registry
 
@@ -107,7 +163,7 @@ SharePoint, Teams, Blob, Jira, ServiceNow, CSV/JSON, custom APIs
 OPA policy, lineage, observability, evaluation
 ```
 
-This is a documented target architecture. The local server, Entra JWT validation support, Foundry IQ adapter, MCP tools, schemas, and demo contracts are implemented; deployment and real tenant wiring remain pending.
+The Azure Container Apps runtime, Foundry IQ adapter, MCP endpoints, Copilot facade, schemas, and web experience are implemented. Production identity, secret management, tenant connectors, telemetry, and customer governance remain explicit deployment work.
 
 ## What Is Implemented Vs Pending
 
@@ -120,15 +176,17 @@ Implemented:
 - governance policy preview and deterministic evaluator,
 - audit run and trust stack contracts,
 - Branch Reliability and Fork Fingerprint,
-- enterprise demo endpoints and UI.
+- enterprise demo endpoints and UI,
+- Enterprise Cockpit, onboarding contract, and evidence graph,
+- Azure Container Apps and Copilot Studio demonstration connectivity.
 
 Pending:
 
-- Copilot Studio connection,
-- Azure Container Apps deployment,
+- production Entra OAuth for the Copilot connector,
+- Azure Key Vault secret references,
 - real tenant connector configuration,
 - production telemetry backend,
-- enterprise Key Vault wiring.
+- customer data governance and retention policy.
 
 ## Fork Fingerprint
 

@@ -79,7 +79,7 @@ Stateful initialization returns `Mcp-Session-Id`. Subsequent `POST`, `GET`, and 
 ## MCP Endpoints
 
 - `/mcp` is the full technical endpoint with ten tools and complete nested evidence contracts.
-- `/mcp-copilot` is the Power Platform and Copilot Studio facade with four simplified, flat-output tools.
+- `/mcp-copilot` is the Power Platform and Copilot Studio facade with five simplified, flat-output tools.
 
 The Copilot facade exposes:
 
@@ -87,6 +87,7 @@ The Copilot facade exposes:
 - `detect_live_fork`
 - `analyze_enterprise_readiness`
 - `evaluate_decision_governance`
+- `explain_enterprise_adoption`
 
 Use [`docs/connectors/contrafactico-mcp-copilot.swagger.yaml`](../docs/connectors/contrafactico-mcp-copilot.swagger.yaml) when creating the Power Platform custom connector. Container Apps should set:
 
@@ -176,7 +177,7 @@ The Copilot-compatible MCP facade is implemented. Tenant connector creation and 
 - `GET /health` is always public.
 - `GET /demo/status` is always public and contains no secret configuration.
 - `GET /mcp/status` is protected according to `AUTH_MODE` and returns only safe transport, Accept-relaxation, session-count, auth-mode, and tool-count metadata.
-- `GET /mcp-copilot/status` reports the facade auth mode, transport mode, Accept compatibility, connector GET compatibility, and four-tool count.
+- `GET /mcp-copilot/status` reports the facade auth mode, transport mode, Accept compatibility, connector GET compatibility, and five-tool count.
 - `POST /mcp`, `GET /mcp`, and `DELETE /mcp` are protected according to `AUTH_MODE`.
 - `/mcp-copilot` inherits `/mcp` authentication unless `COPILOT_CONNECTOR_AUTH_MODE=public`.
 - In stateless mode, `GET` and `DELETE` on either MCP endpoint return `405`.
@@ -185,6 +186,11 @@ The Copilot-compatible MCP facade is implemented. Tenant connector creation and 
 
 Enterprise endpoints:
 
+- `GET /demo/cockpit`
+- `GET /demo/onboarding`
+- `GET /demo/evidence-graph`
+- `GET /demo/deployment-footprint`
+- `GET /demo/channels`
 - `GET /demo/enterprise`
 - `GET /demo/registry`
 - `GET /demo/connectors`
@@ -269,6 +275,9 @@ Credentials must remain in process environment variables or an external secret s
 ## Enterprise Contracts
 
 - `src/services/enterprise.ts` contains deterministic local services for registry, connectors, policies, audit runs, trust modules, readiness, and policy evaluation.
+- `src/services/cockpit.ts` derives cockpit KPIs, connector readiness, and deployment footprint from the existing enterprise contracts.
+- `src/services/onboarding.ts` documents customer inputs, adoption stages, supported channels, generated outputs, limitations, and production requirements.
+- `src/services/evidenceGraph.ts` exposes the deterministic X-200 evidence network used by the cockpit.
 - `docs/policies/contradicted-premise-low-readership.rego` is an OPA-style policy preview.
 - `docs/ENTERPRISE_TRUST_STACK.md` documents implemented modules and optional integration paths.
 

@@ -16,6 +16,33 @@ test("rewinds the X-200 decision and opens cited evidence", async ({
   ).toBeVisible();
   await expect(page.getByTestId("evidence-mode")).toContainText("Mode");
 
+  await expect(page.getByTestId("enterprise-cockpit")).toBeVisible();
+  await expect(page.getByTestId("enterprise-cockpit")).toContainText(
+    "Decision Intelligence Cockpit",
+  );
+  await expect(page.getByTestId("enterprise-cockpit")).toContainText(
+    "$142,000",
+  );
+  await expect(page.getByTestId("onboarding-wizard")).toContainText(
+    "Ground with Foundry IQ",
+  );
+  await expect(page.getByTestId("connector-wall")).toContainText(
+    "Power BI / Fabric",
+  );
+  await expect(page.getByTestId("channel-matrix")).toContainText(
+    "Microsoft 365 Copilot / Teams",
+  );
+  await page.getByTestId("graph-node-evt_mar31_returns").click();
+  await expect(page.getByTestId("evidence-graph")).toContainText(
+    "evt_mar31_returns",
+  );
+
+  await page.screenshot({
+    path: "test-results/contrafactico-cockpit.png",
+    fullPage: true,
+  });
+
+  await page.getByTestId("nav-rewind").click();
   await page.getByTestId("run-rewind").click();
 
   await expect(page.getByTestId("timeline-gap-badge")).toHaveText(
@@ -83,8 +110,11 @@ test("rewinds the X-200 decision and opens cited evidence", async ({
     "Azure Container Apps MCP Server",
   );
   await expect(page.getByTestId("production-architecture")).toContainText(
-    "Deployment pending",
+    "Runtime implemented",
   );
+
+  await page.getByTestId("nav-cockpit").click();
+  await expect(page.getByTestId("enterprise-cockpit")).toBeVisible();
 
   await page.getByTestId("nav-rewind").click();
   await expect(page.getByTestId("timeline-gap-badge")).toHaveText(
