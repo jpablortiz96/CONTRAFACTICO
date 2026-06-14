@@ -64,8 +64,6 @@ The Copilot Studio agent and Power Platform custom connector are implemented and
 
 ![Manual Copilot agent screenshot placeholder](docs/assets/screenshots/copilot-agent-placeholder.png)
 
-See the exact replacement steps in [the screenshot checklist](docs/submission/SCREENSHOT_CHECKLIST.md).
-
 ### Web War Room and Enterprise Cockpit
 
 The Next.js War Room opens on an enterprise command center, while retaining the full X-200 rewind, Enterprise Mode, and Evidence & Trust views.
