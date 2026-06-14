@@ -353,17 +353,6 @@ contrafactico/
 └── web/                           Next.js Enterprise Cockpit and War Room
 ```
 
-## Submission Evidence Checklist
-
-- [ ] Foundry IQ knowledge base screenshot
-- [ ] Azure Container Apps overview screenshot
-- [ ] Power Platform connector test screenshot
-- [ ] Copilot Studio or Microsoft 365 agent response screenshot
-- [x] Web War Room screenshot
-- [x] Enterprise Cockpit screenshot
-- [x] Evidence Graph screenshot
-
-The exact capture names, framing, and replacement instructions are in [docs/submission/SCREENSHOT_CHECKLIST.md](docs/submission/SCREENSHOT_CHECKLIST.md). The 2:30 walkthrough is in [docs/submission/DEMO_SCRIPT.md](docs/submission/DEMO_SCRIPT.md).
 
 ## License
 
